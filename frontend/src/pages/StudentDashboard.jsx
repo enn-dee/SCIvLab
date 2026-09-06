@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/utils/api";
+import { hideExpiredLabs } from "@/offline/offlineMode";
 import { motion } from "motion/react";
 import {
   BookOpen, FlaskConical, Code2, ChevronRight,
@@ -24,21 +25,35 @@ export default function StudentDashboard() {
 
   const fetchAllData = async () => {
     try {
-      const [labsRes, algosRes, progressRes] = await Promise.all([
+      const [labsResult, algosResult, progressResult] = await Promise.allSettled([
         apiFetch("student/labs"),
         apiFetch("algorithms"),
-        apiFetch("progress/user-progress")
+        apiFetch("progress/user-progress"),
       ]);
 
-      const labsData = await labsRes.json();
-      const algosData = await algosRes.json();
-      const progressData = await progressRes.json();
+      if (labsResult.status === "rejected") {
+        throw labsResult.reason;
+      }
 
-      setLabs(Array.isArray(labsData) ? labsData : []);
-      setAlgos(Array.isArray(algosData) ? algosData.sort((a, b) => (a.order || 0) - (b.order || 0)) : []);
+      const labsData = await labsResult.value.json();
+      setLabs(hideExpiredLabs(Array.isArray(labsData) ? labsData : []));
 
-      const progressArray = Array.isArray(progressData) ? progressData : [];
-      setCompletedAlgos(progressArray.filter(p => p.completed).map(p => p.algorithmSlug));
+      if (algosResult.status === "fulfilled") {
+        const algosData = await algosResult.value.json();
+        setAlgos(
+          Array.isArray(algosData)
+            ? algosData.sort((a, b) => (a.order || 0) - (b.order || 0))
+            : [],
+        );
+      }
+
+      if (progressResult.status === "fulfilled") {
+        const progressData = await progressResult.value.json();
+        const progressArray = Array.isArray(progressData) ? progressData : [];
+        setCompletedAlgos(
+          progressArray.filter((p) => p.completed).map((p) => p.algorithmSlug),
+        );
+      }
     } catch (err) {
       console.error(err);
     } finally {

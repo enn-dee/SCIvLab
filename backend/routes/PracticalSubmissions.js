@@ -5,6 +5,7 @@ import Evaluation from "../models/Evaluation.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { loadPracticalLab, requireLabAccess } from "../middleware/labAccess.js";
 import { runJudge0Cases, runJudge0Simple } from "../utils/judge0.js";
+import { runLocalCases, runLocalExecution } from "../utils/localExecution.js";
 
 const router = express.Router();
 const MAX_SOURCE_LENGTH = 100_000;
@@ -186,6 +187,27 @@ router.post(
         return res.status(400).json({ error: "Language is not allowed" });
 
       const sourceCode = buildSourceCode(req.practical, solutionCode, language);
+
+      if (req.query.offline === "1") {
+        if (customStdin !== undefined && customStdin !== null && customStdin.trim() !== "") {
+          const output = await runLocalExecution({
+            sourceCode,
+            language,
+            stdin: String(customStdin).trim(),
+            timeLimitSeconds: req.practical.execution.timeLimitSeconds,
+          });
+          return res.json({
+            mode: "custom",
+            output: { stdout: output.stdout, stderr: output.stderr },
+          });
+        }
+        const results = await runLocalCases({
+          practical: req.practical,
+          sourceCode,
+          language,
+        });
+        return res.json({ results });
+      }
 
       // ── NEW: custom input branch ──
       if (
