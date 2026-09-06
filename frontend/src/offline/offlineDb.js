@@ -54,3 +54,26 @@ export const getQueuedSubmissions = async () =>
 
 export const removeQueuedSubmission = async (id) =>
   runTransaction(OUTBOX_STORE, "readwrite", (store) => store.delete(id));
+
+export const removeDisallowedCacheEntries = async (isAllowed) => {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(CACHE_STORE, "readwrite");
+    const store = transaction.objectStore(CACHE_STORE);
+    const request = store.openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      if (!isAllowed(cursor.value.key)) cursor.delete();
+      cursor.continue();
+    };
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
+};

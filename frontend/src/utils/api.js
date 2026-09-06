@@ -1,4 +1,8 @@
-import { cacheResponse, getCachedResponse } from "../offline/offlineDb";
+import {
+  cacheResponse,
+  getCachedResponse,
+  removeDisallowedCacheEntries,
+} from "../offline/offlineDb";
 
 const cacheKey = (endpoint) => {
   const user = localStorage.getItem("user") || "anonymous";
@@ -7,7 +11,52 @@ const cacheKey = (endpoint) => {
 
 const localCacheKey = (endpoint) => `scivlab:offline:${cacheKey(endpoint)}`;
 
+const isOfflineCacheable = (endpoint) => {
+  const path = endpoint.split("?")[0];
+  return (
+    path === "student/labs" ||
+    /^labs\/[^/]+$/.test(path) ||
+    /^practicals\/lab\/[^/]+$/.test(path) ||
+    path === "submissions/my" ||
+    /^submissions\/my\/[^/]+$/.test(path) ||
+    /^marks\/lab\/[^/]+$/.test(path) ||
+    /^attendance\/student\/[^/]+\/[^/]+$/.test(path) ||
+    /^evaluations\/submission\/[^/]+$/.test(path)
+  );
+};
+
+export const cleanOfflineCache = async () => {
+  const isAllowedKey = (key) => {
+    return (
+      key.includes(":student/labs") ||
+      key.includes(":labs/") ||
+      key.includes(":practicals/lab/") ||
+      key.includes(":submissions/my") ||
+      key.includes(":marks/lab/") ||
+      key.includes(":attendance/student/") ||
+      key.includes(":evaluations/submission/")
+    );
+  };
+  try {
+    await removeDisallowedCacheEntries(isAllowedKey);
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (
+        key?.startsWith("scivlab:offline:") &&
+        (key.endsWith(":algorithms") ||
+          key.includes(":progress/user-progress") ||
+          key.includes(":algo-progress"))
+      ) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    console.warn("Unable to clean disallowed offline cache entries", error);
+  }
+};
+
 const cacheJsonResponse = async (endpoint, response) => {
+  if (!isOfflineCacheable(endpoint)) return response;
   if (response.ok && response.headers.get("content-type")?.includes("application/json")) {
     const payload = await response.clone().json();
     const key = localCacheKey(endpoint);
@@ -50,6 +99,7 @@ const fetchWithTimeout = (url, options, timeoutMs = 8000) => {
 };
 
 const getOfflineResponse = async (endpoint) => {
+  if (!isOfflineCacheable(endpoint)) return null;
   try {
     const cached = await getCachedResponse(cacheKey(endpoint));
     if (cached) return responseFromCache(cached);
