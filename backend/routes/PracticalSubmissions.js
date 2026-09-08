@@ -251,12 +251,6 @@ router.post(
         solutionCode.length > MAX_SOURCE_LENGTH
       )
         return res.status(400).json({ error: "Invalid solution code" });
-      if (!req.practical.execution.enabled)
-        return res
-          .status(400)
-          .json({ error: "Execution is disabled for this practical" });
-      if (!req.practical.execution.allowedLanguages.includes(language))
-        return res.status(400).json({ error: "Language is not allowed" });
       if (idempotencyKey) {
         const existing = await Submission.findOne({
           idempotencyKey,
@@ -265,6 +259,24 @@ router.post(
         if (existing)
           return res.json({ submission: existing, duplicate: true });
       }
+      if (req.lab.kind !== "academic") {
+        const submission = await Submission.create({
+          studentId: req.user.id,
+          practicalId: req.practical._id,
+          code: solutionCode,
+          language,
+          status: "submitted",
+          submittedAt: new Date(),
+          idempotencyKey,
+        });
+        return res.status(201).json({ submission });
+      }
+      if (!req.practical.execution.enabled)
+        return res
+          .status(400)
+          .json({ error: "Execution is disabled for this practical" });
+      if (!req.practical.execution.allowedLanguages.includes(language))
+        return res.status(400).json({ error: "Language is not allowed" });
       const { testCases, results } = await evaluate(
         req.practical,
         solutionCode,

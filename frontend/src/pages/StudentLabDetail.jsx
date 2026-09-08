@@ -871,14 +871,16 @@ export default function StudentLabDetail() {
                   <RotateCcw size={12} />
                   Reset
                 </button>
-                <button
-                  onClick={handleRunCode}
-                  disabled={running}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
-                >
-                  <Play size={12} />
-                  {running ? "Running..." : "Run"}
-                </button>
+                {lab?.kind === "academic" && (
+                  <button
+                    onClick={handleRunCode}
+                    disabled={running}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
+                  >
+                    <Play size={12} />
+                    {running ? "Running..." : "Run"}
+                  </button>
+                )}
                 <button
                   onClick={handleSubmitCode}
                   disabled={submitting}
