@@ -8,7 +8,14 @@ const formatInput = (input) => {
 const formatOutput = (output) =>
   typeof output === "string" ? output.trim() : String(output ?? "").trim();
 
-export const runOfflineTests = (practical, solutionCode, language, customStdin) => {
+export const runOfflineTests = (
+  practical,
+  solutionCode,
+  language,
+  customStdin,
+  customExpected,
+  includeHidden = false,
+) => {
   if (language !== "javascript") {
     throw new Error(
       "Offline execution currently supports JavaScript assignments. Reconnect to run this language.",
@@ -19,7 +26,11 @@ export const runOfflineTests = (practical, solutionCode, language, customStdin) 
   const source = `${template?.prefix || ""}\n${solutionCode}\n${template?.suffix || ""}`;
   const tests = customStdin
     ? [{ input: customStdin, expected: undefined }]
-    : (practical.testCases || []).filter((test) => test.visibility === "public");
+    : customExpected
+      ? [{ input: practical.testCases?.[0]?.input ?? "", expected: customExpected }]
+    : (practical.testCases || []).filter(
+        (test) => includeHidden || test.visibility === "public",
+      );
 
   if (!tests.length) throw new Error("No public test cases are available offline");
 
@@ -31,9 +42,10 @@ export const runOfflineTests = (practical, solutionCode, language, customStdin) 
       );
       const output = formatOutput(execute(formatInput(test.input)));
       return {
-        passed: customStdin ? true : output === formatOutput(test.expected),
+        passed: output === formatOutput(test.expected),
         output,
-        expected: customStdin ? "" : formatOutput(test.expected),
+        expected: test.visibility === "public" ? formatOutput(test.expected) : "",
+        hidden: test.visibility !== "public",
       };
     } catch (error) {
       return { passed: false, output: "", expected: formatOutput(test.expected), error: error.message };

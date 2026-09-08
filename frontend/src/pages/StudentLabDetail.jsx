@@ -58,10 +58,13 @@ export default function StudentLabDetail() {
   const [running, setRunning] = useState(false);
   const [runResults, setRunResults] = useState([]);
   const [runOutput, setRunOutput] = useState(null);
+  const [failedTestCount, setFailedTestCount] = useState(0);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [submitConfirmationResolver, setSubmitConfirmationResolver] = useState(null);
 
   const [showInstructions, setShowInstructions] = useState(false);
   const [instructionsContent, setInstructionsContent] = useState("");
-  const [customStdin, setCustomStdin] = useState("");
+  const [customExpected, setCustomExpected] = useState("");
   const [editorPrefix, setEditorPrefix] = useState("");
   const [editorSuffix, setEditorSuffix] = useState("");
 
@@ -191,7 +194,7 @@ export default function StudentLabDetail() {
     setShowEditor(true);
     setRunResults([]);
     setRunOutput(null);
-    setCustomStdin("");
+    setCustomExpected("");
 
     const initialLanguage =
       practical.execution?.allowedLanguages?.[0] || "python";
@@ -251,15 +254,15 @@ export default function StudentLabDetail() {
 
     try {
       const payload = { solutionCode: code, language };
-      if (customStdin.trim()) {
-        payload.customStdin = customStdin.trim();
+      if (customExpected.trim()) {
+        payload.customExpected = customExpected.trim();
       }
 
       let data;
       if (isOffline()) {
         try {
           const response = await apiFetch(
-            `submissions/${editorPractical._id}/run?offline=1`,
+            `submissions/${editorPractical._id}/run?offline=1&all=1`,
             {
               method: "POST",
               body: JSON.stringify(payload),
@@ -268,15 +271,20 @@ export default function StudentLabDetail() {
           data = await response.json();
           if (!response.ok) throw new Error(data.error || "Local execution failed");
         } catch (localError) {
-          const results = runOfflineTests(editorPractical, code, language, customStdin);
-          data = customStdin
-            ? { mode: "custom", output: { stdout: results[0].output, stderr: "" } }
-            : { results };
+          const results = runOfflineTests(
+            editorPractical,
+            code,
+            language,
+            undefined,
+            customExpected,
+            true,
+          );
+          data = { results };
           if (language !== "javascript") throw localError;
         }
       } else {
         const response = await apiFetch(
-          `submissions/${editorPractical._id}/run`,
+          `submissions/${editorPractical._id}/run?all=1`,
           {
             method: "POST",
             body: JSON.stringify(payload),
@@ -322,13 +330,43 @@ export default function StudentLabDetail() {
     } finally {
       setRunning(false);
     }
-  }, [editorPractical, code, language, customStdin]);
+  }, [editorPractical, code, language, customExpected]);
 
   const handleSubmitCode = useCallback(async () => {
     if (!editorPractical) return;
     setSubmitting(true);
 
     try {
+      if (lab?.kind === "academic") {
+        let results;
+        if (isOffline()) {
+          results = runOfflineTests(editorPractical, code, language, undefined, undefined, true);
+        } else {
+          const testResponse = await apiFetch(
+            `submissions/${editorPractical._id}/run?all=1`,
+            {
+              method: "POST",
+              body: JSON.stringify({ solutionCode: code, language }),
+            },
+          );
+          const testData = await testResponse.json();
+          if (!testResponse.ok) {
+            throw new Error(testData.error || "Unable to validate test cases");
+          }
+          results = testData.results || [];
+        }
+
+        const failedTests = results.filter((result) => !result.passed);
+        if (failedTests.length > 0) {
+          const shouldSubmit = await new Promise((resolve) => {
+            setFailedTestCount(failedTests.length);
+            setSubmitConfirmationResolver(() => resolve);
+            setShowSubmitConfirmation(true);
+          });
+          if (!shouldSubmit) return;
+        }
+      }
+
       if (isOffline()) {
         await queueOfflineSubmission(editorPractical, code, language);
         setSubmissions((current) => ({
@@ -365,7 +403,7 @@ export default function StudentLabDetail() {
     } finally {
       setSubmitting(false);
     }
-  }, [editorPractical, code, language, fetchAllData]);
+  }, [editorPractical, code, language, fetchAllData, lab]);
 
   const getStatusBadge = useCallback(
     (practicalId) => {
@@ -857,9 +895,9 @@ export default function StudentLabDetail() {
                 </select>
                 <input
                   type="text"
-                  placeholder="Custom stdin (optional)"
-                  value={customStdin}
-                  onChange={(e) => setCustomStdin(e.target.value)}
+                  placeholder="Expected output (optional)"
+                  value={customExpected}
+                  onChange={(e) => setCustomExpected(e.target.value)}
                   className="min-w-[120px] flex-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                 />
               </div>
@@ -880,6 +918,50 @@ export default function StudentLabDetail() {
                     <Play size={12} />
                     {running ? "Running..." : "Run"}
                   </button>
+                )}
+                {showSubmitConfirmation && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      className="w-full max-w-md rounded-2xl border border-red-400/20 bg-[#0a0a0a] p-6 shadow-2xl"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-300">
+                          <AlertTriangle size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Some tests failed</h3>
+                          <p className="mt-2 text-sm leading-6 text-gray-400">
+                            {failedTestCount} test case{failedTestCount === 1 ? "" : "s"} failed.
+                            You can still submit your code for teacher review.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-6 flex justify-end gap-3">
+                        <button
+                          onClick={() => {
+                            setShowSubmitConfirmation(false);
+                            submitConfirmationResolver?.(false);
+                            setSubmitConfirmationResolver(null);
+                          }}
+                          className="rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-300 transition hover:bg-white/10"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowSubmitConfirmation(false);
+                            submitConfirmationResolver?.(true);
+                            setSubmitConfirmationResolver(null);
+                          }}
+                          className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-400"
+                        >
+                          Submit anyway
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
                 )}
                 <button
                   onClick={handleSubmitCode}
