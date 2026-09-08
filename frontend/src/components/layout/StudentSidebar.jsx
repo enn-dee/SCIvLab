@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -10,6 +10,17 @@ export default function StudentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+
+  useEffect(() => {
+    const updateConnectionStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+    return () => {
+      window.removeEventListener("online", updateConnectionStatus);
+      window.removeEventListener("offline", updateConnectionStatus);
+    };
+  }, []);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -67,27 +78,34 @@ export default function StudentSidebar() {
           onClick={() => navigate("/student/dashboard")}
           className="flex items-center gap-3 cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shrink-0">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shrink-0 ${
+              isOnline
+                ? "bg-gradient-to-br from-emerald-500 to-cyan-600"
+                : "bg-gradient-to-br from-red-600 to-rose-800"
+            }`}
+          >
             <GraduationCap size={20} className="text-white" />
           </div>
           {!collapsed && (
             <div className="group relative flex items-center">
 
-              <div className="absolute -inset-2 rounded-xl bg-gradient-to-r from-emerald-400/30 via-cyan-500/30 to-blue-500/30 blur-xl opacity-70 transition-all duration-700 group-hover:opacity-100 group-hover:blur-2xl" />
+              <div
+                className={`absolute -inset-2 rounded-xl blur-xl opacity-70 transition-all duration-700 group-hover:opacity-100 group-hover:blur-2xl ${
+                  isOnline
+                    ? "bg-gradient-to-r from-emerald-400/30 via-cyan-500/30 to-blue-500/30"
+                    : "bg-gradient-to-r from-red-500/40 via-rose-500/30 to-red-700/30"
+                }`}
+              />
 
               <h1 className="relative text-2xl font-black tracking-tight flex items-center gap-1">
 
-                <span className="
-          bg-[length:200%_200%]
-          bg-gradient-to-r
-          from-emerald-400
-          via-cyan-400
-          to-blue-500
-          bg-clip-text
-          text-transparent
-          animate-gradient
-          drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]
-        "
+                <span
+                  className={`bg-[length:200%_200%] bg-gradient-to-r bg-clip-text text-transparent animate-gradient ${
+                    isOnline
+                      ? "from-emerald-400 via-cyan-400 to-blue-500 drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                      : "from-red-400 via-rose-400 to-red-600 drop-shadow-[0_0_12px_rgba(239,68,68,0.55)]"
+                  }`}
                 >
                   SCiV
                 </span>
@@ -96,7 +114,15 @@ export default function StudentSidebar() {
                   Lab
                 </span>
 
-                <span className="ml-1 h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
+                <span
+                  title={isOnline ? "Online" : "Offline"}
+                  aria-label={isOnline ? "Online" : "Offline"}
+                  className={`ml-1 h-2 w-2 rounded-full ${
+                    isOnline
+                      ? "bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"
+                      : "bg-red-500 shadow-[0_0_10px_#ef4444]"
+                  }`}
+                />
               </h1>
             </div>
           )}

@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "@/utils/api";
+import {
+  hideExpiredPracticals,
+  isOffline,
+  queueOfflineSubmission,
+  getOfflineDraft,
+  saveOfflineDraft,
+  removeOfflineDraft,
+} from "@/offline/offlineMode";
+import { runOfflineTests } from "@/offline/offlineRunner";
 import { motion } from "motion/react";
 import toast from "react-hot-toast";
 import Editor from "@monaco-editor/react";
@@ -89,7 +98,8 @@ export default function StudentLabDetail() {
     const signal = controller.signal;
 
     try {
-      const [labRes, pracRes, subRes, marksRes, attRes] = await Promise.all([
+      const [labResult, pracResult, subResult, marksResult, attendanceResult] =
+        await Promise.allSettled([
         apiFetch(`labs/${labId}`, { signal }),
         apiFetch(`practicals/lab/${labId}`, { signal }),
         apiFetch("submissions/my", { signal }),
@@ -99,14 +109,27 @@ export default function StudentLabDetail() {
 
       if (!isMounted.current) return;
 
-      const labData = await labRes.json();
-      const pracData = await pracRes.json();
-      const subData = await subRes.json();
-      const marksData = await marksRes.json();
-      const attData = await attRes.json();
+      if (labResult.status === "rejected" || pracResult.status === "rejected") {
+        throw labResult.status === "rejected"
+          ? labResult.reason
+          : pracResult.reason;
+      }
+
+      const labData = await labResult.value.json();
+      const pracData = await pracResult.value.json();
+      const subData =
+        subResult.status === "fulfilled" ? await subResult.value.json() : [];
+      const marksData =
+        marksResult.status === "fulfilled" ? await marksResult.value.json() : [];
+      const attData =
+        attendanceResult.status === "fulfilled"
+          ? await attendanceResult.value.json()
+          : null;
 
       setLab(labData);
-      setPracticals(Array.isArray(pracData) ? pracData : []);
+      setPracticals(
+        hideExpiredPracticals(Array.isArray(pracData) ? pracData : [], labData?.deadline),
+      );
 
       const subMap = {};
       const subArray = Array.isArray(subData) ? subData : [];
@@ -172,9 +195,14 @@ export default function StudentLabDetail() {
 
     const initialLanguage =
       practical.execution?.allowedLanguages?.[0] || "python";
-    setLanguage(initialLanguage);
+    const savedDraft = getOfflineDraft(
+      practical._id,
+      practical.execution?.allowedLanguages || [initialLanguage],
+    );
+    const editorLanguage = savedDraft?.language || initialLanguage;
+    setLanguage(editorLanguage);
 
-    const template = practical.starterTemplate?.[initialLanguage];
+    const template = practical.starterTemplate?.[editorLanguage];
     if (template) {
       setEditorPrefix(template.prefix || "");
       setEditorSuffix(template.suffix || "");
@@ -184,6 +212,11 @@ export default function StudentLabDetail() {
     }
 
     try {
+      if (savedDraft?.code !== undefined) {
+        setCode(savedDraft.code);
+        return;
+      }
+
       const res = await apiFetch(`submissions/my/${practical._id}`);
       const data = await res.json();
 
@@ -222,16 +255,36 @@ export default function StudentLabDetail() {
         payload.customStdin = customStdin.trim();
       }
 
-      const response = await apiFetch(
-        `submissions/${editorPractical._id}/run`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Code execution failed");
+      let data;
+      if (isOffline()) {
+        try {
+          const response = await apiFetch(
+            `submissions/${editorPractical._id}/run?offline=1`,
+            {
+              method: "POST",
+              body: JSON.stringify(payload),
+            },
+          );
+          data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Local execution failed");
+        } catch (localError) {
+          const results = runOfflineTests(editorPractical, code, language, customStdin);
+          data = customStdin
+            ? { mode: "custom", output: { stdout: results[0].output, stderr: "" } }
+            : { results };
+          if (language !== "javascript") throw localError;
+        }
+      } else {
+        const response = await apiFetch(
+          `submissions/${editorPractical._id}/run`,
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          },
+        );
+        data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Code execution failed");
+      }
 
       // Custom input response
       if (data.mode === "custom") {
@@ -276,24 +329,34 @@ export default function StudentLabDetail() {
     setSubmitting(true);
 
     try {
-      const response = await apiFetch(
-        `submissions/${editorPractical._id}/submit`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            solutionCode: code,
+      if (isOffline()) {
+        await queueOfflineSubmission(editorPractical, code, language);
+        setSubmissions((current) => ({
+          ...current,
+          [editorPractical._id]: {
+            practicalId: editorPractical._id,
+            status: "queued",
+            code,
             language,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Submission failed");
+          },
+        }));
+        toast.success("Saved offline. It will submit when you reconnect.");
+      } else {
+        const response = await apiFetch(
+          `submissions/${editorPractical._id}/submit`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              solutionCode: code,
+              language,
+            }),
+          },
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Submission failed");
+        toast.success("Code submitted successfully!");
+        removeOfflineDraft(editorPractical._id, language);
       }
-
-      toast.success("Code submitted successfully!");
       setShowEditor(false);
       setEditorPractical(null);
       fetchAllData(); // refresh submissions & marks
@@ -312,6 +375,12 @@ export default function StudentLabDetail() {
           icon: Clock,
           color: "text-gray-400 bg-gray-500/10",
           label: "Pending",
+        };
+      if (sub.status === "queued")
+        return {
+          icon: Clock,
+          color: "text-amber-300 bg-amber-500/10",
+          label: "Waiting to sync",
         };
       if (sub.status === "late")
         return {
@@ -874,7 +943,13 @@ export default function StudentLabDetail() {
                   theme="vs-dark"
                   language={language === "cpp" ? "cpp" : language}
                   value={code}
-                  onChange={(value) => setCode(value || "")}
+                  onChange={(value) => {
+                    const nextCode = value || "";
+                    setCode(nextCode);
+                    if (isOffline() && editorPractical?._id) {
+                      saveOfflineDraft(editorPractical._id, language, nextCode);
+                    }
+                  }}
                   onMount={handleEditorMount}
                   options={{
                     fontSize: 14,

@@ -22,6 +22,9 @@ import AlgoWorkspace from "./components/layout/AlgoWorkspace";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import TeacherRoute from "./utils/TeacherRoute";
 import TeacherStudents from "./pages/TeacherStudents";
+import OfflineBanner from "./components/layout/OfflineBanner";
+import { flushSubmissionOutbox, removeOfflineDraft } from "./offline/offlineMode";
+import { apiFetch } from "./utils/api";
 
 import { useEffect, useState } from "react";
 
@@ -32,6 +35,24 @@ export default function App() {
 
   useEffect(() => {
     setRole(localStorage.getItem("role"));
+  }, []);
+
+  useEffect(() => {
+    const sync = () =>
+      flushSubmissionOutbox(async (item) => {
+        const response = await apiFetch(`submissions/${item.practicalId}/submit`, {
+          method: "POST",
+          body: JSON.stringify({
+            solutionCode: item.solutionCode,
+            language: item.language,
+          }),
+        });
+        if (!response.ok) throw new Error("Submission sync failed");
+        removeOfflineDraft(item.practicalId, item.language);
+      });
+    window.addEventListener("online", sync);
+    sync();
+    return () => window.removeEventListener("online", sync);
   }, []);
 
   useEffect(() => {
@@ -64,6 +85,7 @@ export default function App() {
   return (
     <>
       <Toaster position="top-center" />
+      <OfflineBanner />
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-zinc-900 to-zinc-950 text-white">
         {getNavbar()}
         {!isStudentRoute && (
