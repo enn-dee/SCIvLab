@@ -90,10 +90,18 @@ export const runLocalExecution = async ({
   }
 };
 
-export const runLocalCases = async ({ practical, sourceCode, language, customStdin }) => {
+export const runLocalCases = async ({
+  practical,
+  sourceCode,
+  language,
+  customStdin,
+  includeHidden = false,
+}) => {
   const tests = customStdin
     ? [{ input: customStdin, expected: "" }]
-    : (practical.testCases || []).filter((test) => test.visibility === "public");
+    : (practical.testCases || []).filter(
+        (test) => includeHidden || test.visibility === "public",
+      );
   if (!tests.length) throw new Error("No public test cases are available offline");
 
   const results = [];
@@ -110,7 +118,8 @@ export const runLocalCases = async ({ practical, sourceCode, language, customStd
         ? !result.stderr && result.code === 0
         : !result.stderr && result.code === 0 && actualOutput === String(test.expected ?? "").trim(),
       actualOutput,
-      expected: test.expected,
+      expected: test.visibility === "public" ? test.expected : undefined,
+      hidden: test.visibility !== "public",
       stderr: result.stderr,
     });
   }
