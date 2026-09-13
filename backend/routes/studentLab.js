@@ -134,7 +134,7 @@ router.post(
 // ─── GET labs where student is enrolled ─────────────────────────────
 router.get("/labs", authMiddleware, async (req, res) => {
   try {
-    const studentId = req.user.id;
+    const studentId = req.user.id || req.user._id;
     const enrollmentLabIds = (
       await Enrollment.find({ studentId, status: "active" }).select("labId")
     ).map((item) => item.labId);
@@ -144,8 +144,33 @@ router.get("/labs", authMiddleware, async (req, res) => {
         { students: studentId },
         { _id: { $in: enrollmentLabIds } },
       ],
-    }).populate("teacherId", "fullName email");
-    res.json(labs);
+    }).populate("teacherId", "fullName email").populate("students", "_id");
+
+    const activeEnrollments = await Enrollment.find({
+      labId: { $in: labs.map((lab) => lab._id) },
+      studentId,
+      status: "active",
+    }).select("labId");
+    const enrolledLabIds = new Set(
+      activeEnrollments.map((enrollment) => String(enrollment.labId)),
+    );
+
+    res.set("Cache-Control", "no-store");
+    res.json(
+      labs.map((lab) => {
+        const data = lab.toObject();
+        if (lab.kind === "academic") {
+          data.isEnrolled =
+            enrolledLabIds.has(String(lab._id)) ||
+            lab.students.some(
+              (student) =>
+                String(student?._id || student?.id || student) ===
+                String(req.user.id),
+            );
+        }
+        return data;
+      }),
+    );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

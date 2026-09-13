@@ -3,6 +3,8 @@ import Practical from "../models/Practical.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { loadLab, loadPracticalLab, requireLabAccess } from "../middleware/labAccess.js";
 import { recordAudit } from "../utils/audit.js";
+import Enrollment from "../models/Enrollment.js";
+import { getPracticalWeekState, getTestWeek } from "../utils/practicalSchedule.js";
 
 const router = express.Router();
 const editableFields = ["title", "description", "instructions", "materials", "deadline", "order", "starterTemplate", "testCases", "execution"];
@@ -27,9 +29,23 @@ router.post("/", authMiddleware, loadLab, requireLabAccess("manage"), async (req
 router.get("/lab/:labId", authMiddleware, loadLab, requireLabAccess("view"), async (req, res, next) => {
   try {
     const practicals = await Practical.find({ labId: req.lab._id }).sort({ order: 1 });
+    const testWeek = getTestWeek(req);
+    const enrollment = req.user.role === "student" && req.lab.kind === "academic"
+      ? await Enrollment.findOne({
+          labId: req.lab._id,
+          studentId: req.user.id,
+          status: "active",
+        }).select("createdAt")
+      : null;
     // Students must never receive hidden test data.
     const safePracticals = req.user.role === "student"
-      ? practicals.map((item) => ({ ...item.toObject(), testCases: item.testCases.filter((test) => test.visibility === "public") }))
+      ? practicals.map((item) => ({
+          ...item.toObject(),
+          testCases: item.testCases.filter((test) => test.visibility === "public"),
+          ...(req.lab.kind === "academic" && enrollment
+            ? { weekSchedule: getPracticalWeekState(item, enrollment.createdAt, new Date(), testWeek) }
+            : {}),
+        }))
       : practicals;
     res.json(safePracticals);
   } catch (error) { next(error); }
@@ -46,6 +62,21 @@ router.get("/:id", authMiddleware, async (req, res, next) => {
         if (accessError) return next(accessError);
         const data = practical.toObject();
         if (req.user.role === "student") data.testCases = data.testCases.filter((test) => test.visibility === "public");
+        if (req.user.role === "student" && req.lab.kind === "academic") {
+          const enrollment = await Enrollment.findOne({
+            labId: req.lab._id,
+            studentId: req.user.id,
+            status: "active",
+          }).select("createdAt");
+          if (enrollment) {
+            data.weekSchedule = getPracticalWeekState(
+              practical,
+              enrollment.createdAt,
+              new Date(),
+              getTestWeek(req),
+            );
+          }
+        }
         res.json(data);
       });
     });

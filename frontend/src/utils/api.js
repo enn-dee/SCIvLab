@@ -13,6 +13,7 @@ const localCacheKey = (endpoint) => `scivlab:offline:${cacheKey(endpoint)}`;
 
 const isOfflineCacheable = (endpoint) => {
   const path = endpoint.split("?")[0];
+  if (endpoint.includes("fresh=1")) return false;
   return (
     path === "student/labs" ||
     /^labs\/[^/]+$/.test(path) ||
@@ -165,6 +166,8 @@ export const apiFetch = async (endpoint, options = {}) => {
     Authorization: token,
     ...options.headers,
   };
+  const testWeek = localStorage.getItem("scivlab:test-week");
+  if (testWeek) headers["X-SCIVLab-Test-Week"] = testWeek;
 
   if (!options.method || options.method === "GET") {
     if (!navigator.onLine) {
