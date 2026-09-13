@@ -6,6 +6,8 @@ import { authMiddleware } from "../middleware/auth.js";
 import { loadPracticalLab, requireLabAccess } from "../middleware/labAccess.js";
 import { runJudge0Cases, runJudge0Simple } from "../utils/judge0.js";
 import { runLocalCases } from "../utils/localExecution.js";
+import Enrollment from "../models/Enrollment.js";
+import { getTestWeek, isPracticalWeekOpen } from "../utils/practicalSchedule.js";
 
 const router = express.Router();
 const MAX_SOURCE_LENGTH = 100_000;
@@ -216,6 +218,24 @@ router.post(
           .json({ error: "Execution is disabled for this practical" });
       if (!req.practical.execution.allowedLanguages.includes(language))
         return res.status(400).json({ error: "Language is not allowed" });
+      if (req.user.role === "student" && req.lab.kind === "academic") {
+        const enrollment = await Enrollment.findOne({
+          labId: req.lab._id,
+          studentId: req.user.id,
+          status: "active",
+        }).select("createdAt");
+        if (
+          enrollment &&
+          !isPracticalWeekOpen(
+            req.practical,
+            enrollment.createdAt,
+            new Date(),
+            getTestWeek(req),
+          )
+        ) {
+          return res.status(403).json({ error: "This practical is not available for editing this week" });
+        }
+      }
 
       const sourceCode = buildSourceCode(req.practical, solutionCode, language);
 

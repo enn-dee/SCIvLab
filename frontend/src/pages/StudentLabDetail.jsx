@@ -49,6 +49,11 @@ export default function StudentLabDetail() {
   const [marks, setMarks] = useState({});
   const [attendance, setAttendance] = useState(null);
   const [activeTab, setActiveTab] = useState("practicals");
+  const [testWeek, setTestWeek] = useState(() => {
+    const stored = localStorage.getItem(`scivlab:test-week:${labId}`);
+    if (stored) localStorage.setItem("scivlab:test-week", stored);
+    return stored ? Number(stored) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [editorPractical, setEditorPractical] = useState(null);
@@ -171,7 +176,15 @@ export default function StudentLabDetail() {
       if (isMounted.current) setLoading(false);
       abortControllerRef.current = null;
     }
-  }, [labId, getStudentId]);
+  }, [labId, getStudentId, testWeek]);
+
+  useEffect(() => {
+    const stored = testWeek ? String(testWeek) : "";
+    if (stored) localStorage.setItem("scivlab:test-week", stored);
+    else localStorage.removeItem("scivlab:test-week");
+    if (testWeek) localStorage.setItem(`scivlab:test-week:${labId}`, stored);
+    else localStorage.removeItem(`scivlab:test-week:${labId}`);
+  }, [labId, testWeek]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -190,6 +203,10 @@ export default function StudentLabDetail() {
   const marksArray = useMemo(() => Object.values(marks), [marks]);
 
   const openEditor = useCallback(async (practical) => {
+    if (practical.weekSchedule?.status === "upcoming") {
+      toast.error(`This practical unlocks in Week ${practical.weekSchedule.weekNumber}`);
+      return;
+    }
     setEditorPractical(practical);
     setShowEditor(true);
     setRunResults([]);
@@ -243,6 +260,10 @@ export default function StudentLabDetail() {
 
   const handleRunCode = useCallback(async () => {
     if (!editorPractical) return;
+    if (editorPractical.weekSchedule?.status === "locked") {
+      toast.error("This practical is view-only until the current week");
+      return;
+    }
     if (!editorPractical.execution?.enabled) {
       toast.error("Code execution is not enabled for this practical");
       return;
@@ -334,6 +355,10 @@ export default function StudentLabDetail() {
 
   const handleSubmitCode = useCallback(async () => {
     if (!editorPractical) return;
+    if (editorPractical.weekSchedule?.status === "locked") {
+      toast.error("This practical is view-only and cannot be resubmitted");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -514,6 +539,34 @@ export default function StudentLabDetail() {
               </button>
             );
           })}
+          {lab.kind === "academic" && (
+            <label
+              className="flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm font-medium whitespace-nowrap text-amber-300"
+              title="Testing only: simulate the selected curriculum week"
+            >
+              <span>Test week:</span>
+              <select
+                value={testWeek ?? ""}
+                onChange={(event) =>
+                  setTestWeek(
+                    event.target.value ? Number(event.target.value) : null,
+                  )
+                }
+                className="rounded-lg border border-amber-400/20 bg-black/30 px-2 py-1 text-amber-100 outline-none"
+                aria-label="Select test week"
+              >
+                <option value="">Live</option>
+                {Array.from(
+                  { length: Math.max(1, sortedPracticals.length) },
+                  (_, index) => index + 1,
+                ).map((week) => (
+                  <option key={week} value={week}>
+                    Week {week}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         {/* PRACTICALS TAB */}
@@ -544,6 +597,9 @@ export default function StudentLabDetail() {
                 const practicalMarks = marks[p._id];
                 const practicalEval = evaluations[p._id];
                 const isSubmitted = !!submissions[p._id];
+                const weekStatus = p.weekSchedule?.status;
+                const isUpcomingWeek = weekStatus === "upcoming";
+                const isReadOnlyWeek = weekStatus === "locked";
 
                 return (
                   <motion.div
@@ -551,9 +607,11 @@ export default function StudentLabDetail() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className={`rounded-2xl border backdrop-blur-xl p-5 transition-all ${
+                    className={`relative rounded-2xl border backdrop-blur-xl p-5 transition-all ${
                       isPastDeadline
                         ? "opacity-50 bg-gray-800/20 border-gray-600/30 pointer-events-none select-none"
+                        : isUpcomingWeek
+                          ? "bg-white/[0.02] border-white/10"
                         : practicalEval?.status === "approved"
                           ? "bg-emerald-500/5 border-emerald-400/30"
                           : practicalEval?.status === "rejected"
@@ -561,7 +619,24 @@ export default function StudentLabDetail() {
                             : "bg-white/[0.04] border-white/10 hover:border-emerald-400/20"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    {isUpcomingWeek && (
+                      <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl pointer-events-none">
+                        <div className="flex max-w-[90%] flex-col items-center gap-1 text-center">
+                          <Lock size={22} className="text-gray-200" />
+                          <span className="text-base font-bold tracking-wide text-white sm:text-lg">
+                            Locked
+                          </span>
+                          <span className="text-xs text-gray-300 sm:text-sm">
+                            Available when Week {p.weekSchedule.weekNumber} begins
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className={`flex items-start justify-between gap-4 ${
+                        isUpcomingWeek ? "blur-[1px] opacity-40 brightness-50" : ""
+                      }`}
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <span className="text-xs bg-white/5 px-2 py-1 rounded-full text-gray-500">
@@ -683,13 +758,14 @@ export default function StudentLabDetail() {
                         {/* ── Code button ── */}
                         {!(
                           lab.kind === "academic" &&
-                          practicalEval?.status === "approved"
+                          practicalEval?.status === "approved" &&
+                          !isReadOnlyWeek
                         ) ? (
                           <button
                             onClick={() => openEditor(p)}
-                            disabled={isPastDeadline}
+                            disabled={isPastDeadline || isUpcomingWeek}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition ${
-                              isPastDeadline
+                              isPastDeadline || isUpcomingWeek
                                 ? "bg-gray-600/20 border-gray-500/30 text-gray-500 cursor-not-allowed"
                                 : "bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/30"
                             }`}
@@ -697,6 +773,10 @@ export default function StudentLabDetail() {
                             <Code2 size={15} />
                             {isPastDeadline
                               ? "Closed"
+                              : isUpcomingWeek
+                                ? `Available Week ${p.weekSchedule.weekNumber}`
+                                : isReadOnlyWeek
+                                  ? "View Code"
                               : submissions[p._id]
                                 ? "Edit Code"
                                 : "Write Code"}
@@ -875,6 +955,7 @@ export default function StudentLabDetail() {
                 </div>
                 <select
                   value={language}
+                  disabled={editorPractical?.weekSchedule?.status === "locked"}
                   onChange={(e) => {
                     const nextLang = e.target.value;
                     setLanguage(nextLang);
@@ -897,11 +978,18 @@ export default function StudentLabDetail() {
                   type="text"
                   placeholder="Expected output (optional)"
                   value={customExpected}
+                  disabled={editorPractical?.weekSchedule?.status === "locked"}
                   onChange={(e) => setCustomExpected(e.target.value)}
-                  className="min-w-[120px] flex-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                  className="min-w-[120px] flex-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <div className="flex items-center gap-2">
+                {editorPractical?.weekSchedule?.status === "locked" && (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-300 text-xs">
+                    <Lock size={12} />
+                    View only
+                  </span>
+                )}
                 {editorPractical?.instructions && (
                   <button
                     onClick={() => {
@@ -914,14 +1002,17 @@ export default function StudentLabDetail() {
                     Instructions
                   </button>
                 )}
-                <button
-                  onClick={resetCode}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs hover:bg-white/10 transition"
-                >
-                  <RotateCcw size={12} />
-                  Reset
-                </button>
-                {lab?.kind === "academic" && (
+                {editorPractical?.weekSchedule?.status !== "locked" && (
+                  <button
+                    onClick={resetCode}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs hover:bg-white/10 transition"
+                  >
+                    <RotateCcw size={12} />
+                    Reset
+                  </button>
+                )}
+                {lab?.kind === "academic" &&
+                  editorPractical?.weekSchedule?.status !== "locked" && (
                   <button
                     onClick={handleRunCode}
                     disabled={running}
@@ -975,23 +1066,25 @@ export default function StudentLabDetail() {
                     </motion.div>
                   </div>
                 )}
-                <button
-                  onClick={handleSubmitCode}
-                  disabled={submitting}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      Submit
-                    </>
-                  )}
-                </button>
+                {editorPractical?.weekSchedule?.status !== "locked" && (
+                  <button
+                    onClick={handleSubmitCode}
+                    disabled={submitting}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        Submit
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={closeEditor}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
@@ -1048,6 +1141,8 @@ export default function StudentLabDetail() {
                   }}
                   onMount={handleEditorMount}
                   options={{
+                    readOnly: editorPractical?.weekSchedule?.status === "locked",
+                    domReadOnly: editorPractical?.weekSchedule?.status === "locked",
                     fontSize: 14,
                     minimap: { enabled: false },
                     padding: { top: 8, bottom: 8 },
