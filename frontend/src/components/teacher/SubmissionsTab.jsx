@@ -18,6 +18,7 @@ export default function SubmissionsTab({ lab }) {
   const [runningSubmission, setRunningSubmission] = useState(false);
   const [runResults, setRunResults] = useState(null);
   const [runOutput, setRunOutput] = useState(null);
+  const [customExpected, setCustomExpected] = useState("");
 
   useEffect(() => {
     fetchPracticals();
@@ -61,14 +62,19 @@ export default function SubmissionsTab({ lab }) {
     setRunResults(null);
     setRunOutput(null);
     try {
-      const response = await apiFetch(`submissions/submission/${viewingCode._id}/run`, { method: "POST" });
+      const response = await apiFetch(`submissions/submission/${viewingCode._id}/run`, {
+        method: "POST",
+        body: JSON.stringify({
+          customExpected: customExpected.trim(),
+        }),
+      });
       const data = await response.json();
-      if (data.mode === "simple") {
+      if (data.mode === "simple" || data.mode === "custom") {
         setRunOutput(data.output || null);
       } else {
         setRunResults(data.results || []);
       }
-      toast.success("Submission executed");
+      toast.success(data.mode === "tests" ? "Test case executed" : "Submission executed");
     } catch (error) {
       toast.error(error.message || "Unable to run submission");
     } finally {
@@ -227,6 +233,7 @@ export default function SubmissionsTab({ lab }) {
                           <button
                             onClick={() => {
                               setViewingCode(s);
+                              setCustomExpected("");
                               setRunResults(null);
                               setRunOutput(null);
                             }}
@@ -354,6 +361,13 @@ export default function SubmissionsTab({ lab }) {
                     </>
                   )}
                 </button>
+                <input
+                  type="text"
+                  placeholder="Expected output (optional)"
+                  value={customExpected}
+                  onChange={(event) => setCustomExpected(event.target.value)}
+                  className="w-44 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                />
                 <button
                   onClick={handleRunSubmission}
                   disabled={runningSubmission}
@@ -365,6 +379,7 @@ export default function SubmissionsTab({ lab }) {
                   onClick={() => {
                     setViewingCode(null);
                     setCopied(false);
+                    setCustomExpected("");
                   }}
                   className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition"
                 >

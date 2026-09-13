@@ -65,7 +65,7 @@ const practicalSchema = new mongoose.Schema({
       checker: { type: String, default: null }
     }],
     execution: {
-      enabled: { type: Boolean, default: false },
+      enabled: { type: Boolean, default: true },
       allowedLanguages: { type: [String], default: ["python"] },
       timeLimitSeconds: { type: Number, default: 2, min: 1, max: 15 },
       memoryLimitKb: { type: Number, default: 128000, min: 16000 }

@@ -11,7 +11,14 @@ const pick = (body) => Object.fromEntries(editableFields.filter((field) => body[
 router.post("/", authMiddleware, loadLab, requireLabAccess("manage"), async (req, res, next) => {
   try {
     if (!req.body.title) return res.status(400).json({ error: "title is required" });
-    const practical = await Practical.create({ ...pick(req.body), labId: req.lab._id });
+    const practical = await Practical.create({
+      ...pick(req.body),
+      labId: req.lab._id,
+      execution: {
+        ...(req.body.execution || {}),
+        enabled: true,
+      },
+    });
     await recordAudit({ req, labId: req.lab._id, entityType: "practical", entityId: practical._id, action: "created", after: practical.toObject() });
     res.status(201).json(practical);
   } catch (error) { next(error); }
