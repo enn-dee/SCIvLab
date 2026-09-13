@@ -26,10 +26,12 @@ const loadPractical = async (req, res, next) => {
 const exposeResults = (results, testCases) =>
   results.map((result, index) => {
     const testCase = testCases[index];
-    if (testCase.visibility === "public") {
-      return { ...result, expected: testCase.expected };
-    }
-    return { caseId: result.caseId, passed: result.passed, hidden: true };
+    return {
+      ...result,
+      expected: testCase.expected,
+      visibility: testCase.visibility,
+      hidden: testCase.visibility !== "public",
+    };
   });
 
 const resolveLanguage = (practical, submissionLanguage) => {

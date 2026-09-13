@@ -44,7 +44,7 @@ export const runOfflineTests = (
       return {
         passed: output === formatOutput(test.expected),
         output,
-        expected: test.visibility === "public" ? formatOutput(test.expected) : "",
+        expected: formatOutput(test.expected),
         hidden: test.visibility !== "public",
       };
     } catch (error) {

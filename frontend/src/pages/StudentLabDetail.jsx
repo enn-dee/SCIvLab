@@ -311,16 +311,16 @@ export default function StudentLabDetail() {
       const passed = results.filter((r) => r.passed).length;
       const total = results.length;
       if (total === 0) {
-        setRunOutput({ stdout: "No public test cases found.", stderr: "" });
+        setRunOutput({ stdout: "No test cases found.", stderr: "" });
       } else if (passed === total) {
         setRunOutput({
-          stdout: `✅ All ${total} public tests passed!`,
+          stdout: `✅ All ${total} tests passed!`,
           stderr: "",
         });
         toast.success("All tests passed!");
       } else {
         setRunOutput({
-          stdout: `⚠️ ${passed}/${total} public tests passed.`,
+          stdout: `⚠️ ${passed}/${total} tests passed.`,
         });
         toast.error(`${passed}/${total} tests passed`);
       }
@@ -902,6 +902,18 @@ export default function StudentLabDetail() {
                 />
               </div>
               <div className="flex items-center gap-2">
+                {editorPractical?.instructions && (
+                  <button
+                    onClick={() => {
+                      setInstructionsContent(editorPractical.instructions);
+                      setShowInstructions(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs hover:bg-white/10 transition"
+                  >
+                    <Eye size={12} />
+                    Instructions
+                  </button>
+                )}
                 <button
                   onClick={resetCode}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs hover:bg-white/10 transition"
@@ -1082,7 +1094,7 @@ export default function StudentLabDetail() {
             {runResults.length > 0 && (
               <div className="max-h-44 overflow-y-auto border-t border-white/10 bg-black/30 p-4 flex-shrink-0">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Public test results
+                  Test results
                 </p>
                 <div className="space-y-2">
                   {runResults.map((result, index) => (
@@ -1101,12 +1113,10 @@ export default function StudentLabDetail() {
                       >
                         Test {index + 1}: {result.passed ? "Passed" : "Failed"}
                       </span>
-                      {!result.hidden && !result.passed && (
-                        <p className="mt-1 text-gray-400">
-                          Expected: {String(result.expected ?? "")} · Actual:{" "}
-                          {result.actualOutput || "(no output)"}
-                        </p>
-                      )}
+                      <p className="mt-1 text-gray-400">
+                        Expected: {String(result.expected ?? "")} · Actual:{" "}
+                        {result.actualOutput || result.output || "(no output)"}
+                      </p>
                     </div>
                   ))}
                 </div>
