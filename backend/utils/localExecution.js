@@ -118,7 +118,7 @@ export const runLocalCases = async ({
         ? !result.stderr && result.code === 0
         : !result.stderr && result.code === 0 && actualOutput === String(test.expected ?? "").trim(),
       actualOutput,
-      expected: test.visibility === "public" ? test.expected : undefined,
+      expected: test.expected,
       hidden: test.visibility !== "public",
       stderr: result.stderr,
     });

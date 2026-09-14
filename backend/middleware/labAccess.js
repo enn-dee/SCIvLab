@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Lab from "../models/Lab.js";
 import Enrollment from "../models/Enrollment.js";
 import LabTeacherAssignment from "../models/LabTeacherAssignment.js";
+import { getTestWeek, isPracticalWeekOpen } from "../utils/practicalSchedule.js";
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -60,6 +61,24 @@ export const requireLabAccess = (action) => async (req, res, next) => {
       const deadline = req.practical?.deadline || req.lab.deadline;
       if (action === "submit" && deadline && new Date() > new Date(deadline) && !req.lab.rules?.lateSubmissionAllowed) {
         return res.status(403).json({ error: "The submission deadline has passed" });
+      }
+      if (action === "submit" && req.lab.kind === "academic" && req.practical) {
+        const enrollmentRecord = await Enrollment.findOne({
+          labId: req.lab._id,
+          studentId: id,
+          status: "active",
+        }).select("createdAt");
+        if (
+          enrollmentRecord &&
+          !isPracticalWeekOpen(
+            req.practical,
+            enrollmentRecord.createdAt,
+            new Date(),
+            getTestWeek(req),
+          )
+        ) {
+          return res.status(403).json({ error: "This practical is not available for submission this week" });
+        }
       }
       return next();
     }

@@ -26,7 +26,7 @@ export default function StudentDashboard() {
   const fetchAllData = async () => {
     try {
       const [labsResult, algosResult, progressResult] = await Promise.allSettled([
-        apiFetch("student/labs"),
+        apiFetch(`student/labs?includeEnrollmentStatus=1&fresh=1&statusAt=${Date.now()}`),
         apiFetch("algorithms"),
         apiFetch("progress/user-progress"),
       ]);
@@ -191,7 +191,20 @@ export default function StudentDashboard() {
                           <FlaskConical size={22} className="text-emerald-400" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{lab.name}</h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-lg font-semibold text-white">{lab.name}</h3>
+                            {lab.kind === "academic" && (
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                                  lab.isEnrolled
+                                    ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-300"
+                                    : "border-gray-400/20 bg-gray-500/10 text-gray-300"
+                                }`}
+                              >
+                                {lab.isEnrolled ? "Enrolled" : "Not enrolled"}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-400">{lab.subjectCode}</p>
                           {lab.kind === "academic" && (
                             <span className="mt-1 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] text-cyan-300">Shared curriculum</span>
