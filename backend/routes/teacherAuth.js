@@ -9,39 +9,45 @@ dotenv.config();
 const router = express.Router();
 
 // REGISTER
+// router.post("/register", async (req, res) => {
+//   try {
+//     const { fullName, email, password, department } = req.body;
+
+//     if (!fullName || !email || !password) {
+//       return res.status(400).json({ msg: "Missing required fields" });
+//     }
+
+//     const existing = await Teacher.findOne({ email });
+//     if (existing) {
+//       return res.status(400).json({ msg: "Teacher already exists" });
+//     }
+
+//     const hashed = await bcrypt.hash(password, 10);
+
+//     const teacher = await Teacher.create({
+//       fullName,
+//       email,
+//       password: hashed,
+//       department
+//     });
+
+//     const token = jwt.sign(
+//       { id: teacher._id, role: "teacher" },
+//       process.env.SECRET_KEY,
+//       { expiresIn: "7d" }
+//     );
+
+//     res.json({ token, teacher: { id: teacher._id, fullName, email, department } });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ msg: "Server error" });
+//   }
+// });
+// TEACHER REGISTRATION DISABLED — accounts are created by super admin
 router.post("/register", async (req, res) => {
-  try {
-    const { fullName, email, password, department } = req.body;
-
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ msg: "Missing required fields" });
-    }
-
-    const existing = await Teacher.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ msg: "Teacher already exists" });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    const teacher = await Teacher.create({
-      fullName,
-      email,
-      password: hashed,
-      department
-    });
-
-    const token = jwt.sign(
-      { id: teacher._id, role: "teacher" },
-      process.env.SECRET_KEY,
-      { expiresIn: "7d" }
-    );
-
-    res.json({ token, teacher: { id: teacher._id, fullName, email, department } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: "Server error" });
-  }
+  return res.status(403).json({
+    msg: "Teacher registration is closed. Contact the administrator.",
+  });
 });
 
 // LOGIN
@@ -62,7 +68,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: teacher._id, role: "teacher" },
       process.env.SECRET_KEY,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.json({
@@ -71,8 +77,8 @@ router.post("/login", async (req, res) => {
         id: teacher._id,
         fullName: teacher.fullName,
         email: teacher.email,
-        department: teacher.department
-      }
+        department: teacher.department,
+      },
     });
   } catch (err) {
     console.error(err);

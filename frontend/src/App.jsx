@@ -23,7 +23,13 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 import TeacherRoute from "./utils/TeacherRoute";
 import TeacherStudents from "./pages/TeacherStudents";
 import OfflineBanner from "./components/layout/OfflineBanner";
-import { flushSubmissionOutbox, removeOfflineDraft } from "./offline/offlineMode";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminRoute from "./utils/SuperAdminRoute";
+import {
+  flushSubmissionOutbox,
+  removeOfflineDraft,
+} from "./offline/offlineMode";
 import { apiFetch } from "./utils/api";
 
 import { useEffect, useState } from "react";
@@ -40,13 +46,16 @@ export default function App() {
   useEffect(() => {
     const sync = () =>
       flushSubmissionOutbox(async (item) => {
-        const response = await apiFetch(`submissions/${item.practicalId}/submit`, {
-          method: "POST",
-          body: JSON.stringify({
-            solutionCode: item.solutionCode,
-            language: item.language,
-          }),
-        });
+        const response = await apiFetch(
+          `submissions/${item.practicalId}/submit`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              solutionCode: item.solutionCode,
+              language: item.language,
+            }),
+          },
+        );
         if (!response.ok) throw new Error("Submission sync failed");
         removeOfflineDraft(item.practicalId, item.language);
       });
@@ -65,6 +74,8 @@ export default function App() {
 
   const isLanding = location.pathname === "/";
   const isTeacherRoute = location.pathname.startsWith("/teacher");
+  const isSuperAdminRoute = location.pathname.startsWith("/superadmin");
+
   const isStudentRoute =
     location.pathname.startsWith("/student") ||
     location.pathname.startsWith("/algo");
@@ -73,10 +84,12 @@ export default function App() {
     "/register",
     "/teacher/login",
     "/teacher/register",
+    "/superadmin/login",
   ].includes(location.pathname);
 
   const getNavbar = () => {
     if (isAuthPage || isLanding) return null;
+    if (isSuperAdminRoute) return null;
     if (isTeacherRoute) return <TeacherNavbar />;
     if (isStudentRoute) return null;
     return <Navbar />;
@@ -148,6 +161,14 @@ export default function App() {
                 />
                 <Route path="/algo-dashboard" element={<AlgoDashboard />} />
                 <Route path="/algo/:id" element={<AlgoWorkspace />} />
+              </Route>
+              {/* SUPER ADMIN */}
+              <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+              <Route element={<SuperAdminRoute />}>
+                <Route
+                  path="/superadmin/dashboard"
+                  element={<SuperAdminDashboard />}
+                />
               </Route>
             </Routes>
           </div>
