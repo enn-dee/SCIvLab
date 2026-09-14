@@ -6,6 +6,7 @@ import Marks from "../models/Marks.js";
 import Attendance from "../models/Attendance.js";
 import Evaluation from "../models/Evaluation.js";
 import { authMiddleware } from "../middleware/auth.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
@@ -211,6 +212,203 @@ router.get("/dashboard-stats", authMiddleware, async (req, res) => {
       pendingEvaluations,
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── TEACHER ANALYTICS OVERVIEW ────────────────────────────────────
+router.get("/teacher-overview", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({ error: "Teacher access required" });
+    }
+    const teacherId = req.user.id;
+
+    // ── Collect all labs this teacher can see ──
+    const [ownedLabs, academicLabs] = await Promise.all([
+      Lab.find({
+        $or: [{ ownerTeacherId: teacherId }, { teacherId: teacherId }],
+      }).lean(),
+      Lab.find({ kind: "academic" }).lean(),
+    ]);
+    const labMap = new Map();
+    [...ownedLabs, ...academicLabs].forEach((l) =>
+      labMap.set(String(l._id), l),
+    );
+    const allLabs = Array.from(labMap.values());
+    const labIds = allLabs.map((l) => l._id);
+
+    // ── Unique students across all labs ──
+    const allStudentIds = new Set();
+    allLabs.forEach((lab) => {
+      (lab.students || []).forEach((sid) => allStudentIds.add(String(sid)));
+    });
+
+    // ── Practicals + Submissions ──
+    const practicals = await Practical.find({ labId: { $in: labIds } })
+      .select("_id labId title")
+      .lean();
+    const practicalIds = practicals.map((p) => p._id);
+
+    const submissions = await Submission.find({
+      practicalId: { $in: practicalIds },
+    })
+      .select("_id studentId practicalId submittedAt status score")
+      .lean();
+
+    // ── Last 7 days submission activity ──
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const submissionActivity = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = submissions.filter(
+        (s) =>
+          s.submittedAt &&
+          new Date(s.submittedAt).toISOString().slice(0, 10) === key,
+      ).length;
+      submissionActivity.push({
+        date: key,
+        label: d.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }),
+        count,
+      });
+    }
+
+    // ── Attendance trend (last 30 days) ──
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const attendanceRecords = await Attendance.find({
+      labId: { $in: labIds },
+      date: { $gte: thirtyDaysAgo },
+    })
+      .select("studentId date status")
+      .lean();
+
+    const attendanceByDay = {};
+    attendanceRecords.forEach((r) => {
+      const key = new Date(r.date).toISOString().slice(0, 10);
+      if (!attendanceByDay[key])
+        attendanceByDay[key] = { present: 0, total: 0 };
+      attendanceByDay[key].total++;
+      if (r.status === "present") attendanceByDay[key].present++;
+    });
+    const attendanceTrend = Object.entries(attendanceByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, { present, total }]) => ({
+        date,
+        label: new Date(date).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }),
+        percentage: total ? Math.round((present / total) * 100) : 0,
+      }));
+
+    // ── Pending evaluations ──
+    const pendingEvaluations = await Evaluation.countDocuments({
+      teacherId,
+      status: "pending",
+    });
+
+    // ── Lab-wise breakdown ──
+    const labBreakdown = allLabs.map((lab) => {
+      const labPracticals = practicals.filter(
+        (p) => String(p.labId) === String(lab._id),
+      );
+      const labPracIds = new Set(labPracticals.map((p) => String(p._id)));
+      const labSubs = submissions.filter((s) =>
+        labPracIds.has(String(s.practicalId)),
+      );
+      return {
+        id: lab._id,
+        name: lab.name,
+        subjectCode: lab.subjectCode,
+        students: (lab.students || []).length,
+        practicals: labPracticals.length,
+        submissions: labSubs.length,
+      };
+    });
+
+    // ── Approved evaluations → per-student completion count ──
+    const evaluations = await Evaluation.find({
+      status: "approved",
+      submissionId: { $in: submissions.map((s) => s._id) },
+    })
+      .populate({ path: "submissionId", select: "studentId practicalId" })
+      .lean();
+
+    const studentCompleted = {};
+    evaluations.forEach((ev) => {
+      const sid = ev.submissionId?.studentId;
+      const pid = ev.submissionId?.practicalId;
+      if (!sid || !pid) return;
+      const key = String(sid);
+      if (!studentCompleted[key]) studentCompleted[key] = new Set();
+      studentCompleted[key].add(String(pid));
+    });
+
+    // ── Students info ──
+    const students = await User.find({
+      _id: { $in: Array.from(allStudentIds) },
+    })
+      .select("fullName rollNumber batch branch")
+      .lean();
+
+    // ── Average attendance per student ──
+    const studentAttendance = {};
+    attendanceRecords.forEach((r) => {
+      const key = String(r.studentId);
+      if (!studentAttendance[key])
+        studentAttendance[key] = { present: 0, total: 0 };
+      studentAttendance[key].total++;
+      if (r.status === "present") studentAttendance[key].present++;
+    });
+
+    const studentStats = students.map((s) => {
+      const att = studentAttendance[String(s._id)];
+      const attendance =
+        att && att.total ? Math.round((att.present / att.total) * 100) : null;
+      return {
+        id: s._id,
+        fullName: s.fullName,
+        rollNumber: s.rollNumber,
+        batch: s.batch,
+        branch: s.branch,
+        attendance,
+        completed: studentCompleted[String(s._id)]?.size || 0,
+      };
+    });
+
+    const topStudents = [...studentStats]
+      .sort((a, b) => b.completed - a.completed)
+      .slice(0, 5);
+
+    const atRiskStudents = studentStats
+      .filter((s) => s.attendance !== null && s.attendance < 75)
+      .sort((a, b) => a.attendance - b.attendance)
+      .slice(0, 6);
+
+    res.json({
+      summary: {
+        totalLabs: allLabs.length,
+        activeLabs: allLabs.filter((l) => l.status === "current").length,
+        totalStudents: allStudentIds.size,
+        totalPracticals: practicals.length,
+        totalSubmissions: submissions.length,
+        pendingEvaluations,
+      },
+      submissionActivity,
+      attendanceTrend,
+      labBreakdown,
+      topStudents,
+      atRiskStudents,
+    });
+  } catch (err) {
+    console.error("teacher-overview error:", err);
     res.status(500).json({ error: err.message });
   }
 });
