@@ -18,7 +18,7 @@ export const runOfflineTests = (
 ) => {
   if (language !== "javascript") {
     throw new Error(
-      "Offline execution currently supports JavaScript assignments. Reconnect to run this language.",
+      "Offline execution currently not supported. Reconnect to run tests.",
     );
   }
 

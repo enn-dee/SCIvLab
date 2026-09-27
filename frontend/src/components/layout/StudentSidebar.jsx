@@ -5,21 +5,16 @@ import {
   GraduationCap, Code2, ChevronLeft,
   ChevronRight, LogOut, Home,
 } from "lucide-react";
+import { isOffline, subscribeToServerStatus } from "../../offline/offlineMode";
 
 export default function StudentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isOnline, setIsOnline] = useState(() => !isOffline());
 
   useEffect(() => {
-    const updateConnectionStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", updateConnectionStatus);
-    window.addEventListener("offline", updateConnectionStatus);
-    return () => {
-      window.removeEventListener("online", updateConnectionStatus);
-      window.removeEventListener("offline", updateConnectionStatus);
-    };
+    return subscribeToServerStatus(setIsOnline);
   }, []);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");

@@ -27,6 +27,7 @@ import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminRoute from "./utils/SuperAdminRoute";
 import {
+  checkServerOnline,
   flushSubmissionOutbox,
   removeOfflineDraft,
 } from "./offline/offlineMode";
@@ -41,6 +42,19 @@ export default function App() {
 
   useEffect(() => {
     setRole(localStorage.getItem("role"));
+  }, []);
+
+  useEffect(() => {
+    const checkHealth = () => checkServerOnline(true);
+    checkHealth();
+    window.addEventListener("online", checkHealth);
+    window.addEventListener("offline", checkHealth);
+    const interval = window.setInterval(checkHealth, 15000);
+    return () => {
+      window.removeEventListener("online", checkHealth);
+      window.removeEventListener("offline", checkHealth);
+      window.clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

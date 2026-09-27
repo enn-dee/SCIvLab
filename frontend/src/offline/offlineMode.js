@@ -4,8 +4,14 @@ import {
   queueSubmission,
   removeQueuedSubmission,
 } from "./offlineDb";
+import {
+  checkServerOnline,
+  isServerOnline,
+  subscribeToServerStatus,
+} from "./serverStatus";
 
-export const isOffline = () => !navigator.onLine;
+export const isOffline = () => !isServerOnline();
+export { checkServerOnline, subscribeToServerStatus };
 
 const expired = (item, fallbackDate) => {
   const deadline = item?.deadline || fallbackDate;
@@ -67,7 +73,7 @@ export const removeOfflineDraft = (practicalId, language) => {
 };
 
 export const flushSubmissionOutbox = async (submit) => {
-  if (isOffline()) return;
+  if (!(await checkServerOnline())) return;
   const queued = await getQueuedSubmissions();
   for (const item of queued) {
     try {
