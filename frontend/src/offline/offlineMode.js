@@ -39,11 +39,75 @@ const draftKey = (practicalId, language) => {
   return `scivlab:offline-draft:${user}:${practicalId}:${language}`;
 };
 
-export const saveOfflineDraft = (practicalId, language, code) => {
+const autoSyncKey = (practicalId) => {
+  const user = localStorage.getItem("user") || "anonymous";
+  return `scivlab:auto-sync:${user}:${practicalId}`;
+};
+
+export const isAutoSyncEnabled = (practicalId) =>
+  localStorage.getItem(autoSyncKey(practicalId)) === "true";
+
+export const setAutoSyncEnabled = (practicalId, enabled) => {
+  const key = autoSyncKey(practicalId);
+  if (enabled) localStorage.setItem(key, "true");
+  else localStorage.removeItem(key);
+  const attemptPrefix = `scivlab:auto-sync-attempt:${localStorage.getItem("user") || "anonymous"}:${practicalId}:`;
+  for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+    const storedKey = localStorage.key(index);
+    if (storedKey?.startsWith(attemptPrefix)) localStorage.removeItem(storedKey);
+  }
+};
+
+export const getAutoSyncDrafts = () => {
+  const user = localStorage.getItem("user") || "anonymous";
+  const prefix = `scivlab:offline-draft:${user}:`;
+  const drafts = [];
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith(prefix)) continue;
+
+    let draft;
+    try {
+      draft = JSON.parse(localStorage.getItem(key));
+    } catch (error) {
+      console.warn("Unable to read saved offline draft", error);
+      continue;
+    }
+    if (
+      draft?.practicalId &&
+      draft?.labId &&
+      draft?.labKind === "academic" &&
+      draft?.offlineDraft === true &&
+      typeof draft.code === "string" &&
+      isAutoSyncEnabled(draft.practicalId)
+    ) {
+      drafts.push(draft);
+    }
+  }
+  return drafts;
+};
+
+export const saveOfflineDraft = (
+  practicalId,
+  language,
+  code,
+  metadata = {},
+) => {
   try {
     localStorage.setItem(
       draftKey(practicalId, language),
-      JSON.stringify({ practicalId, language, code, savedAt: Date.now() }),
+      JSON.stringify({
+        ...metadata,
+        practicalId,
+        language,
+        code,
+        savedAt: Date.now(),
+        syncId: crypto.randomUUID(),
+      }),
+    );
+    localStorage.removeItem(
+      `scivlab:auto-sync-attempt:${localStorage.getItem("user") || "anonymous"}:${practicalId}:${language}`,
     );
   } catch (error) {
     console.error("Unable to save offline assignment draft", error);
@@ -70,6 +134,17 @@ export const removeOfflineDraft = (practicalId, language) => {
   } catch (error) {
     console.error("Unable to remove offline assignment draft", error);
   }
+};
+
+const syncStatusListeners = new Set();
+
+export const publishAutoSyncStatus = (status) => {
+  syncStatusListeners.forEach((listener) => listener(status));
+};
+
+export const subscribeToAutoSyncStatus = (listener) => {
+  syncStatusListeners.add(listener);
+  return () => syncStatusListeners.delete(listener);
 };
 
 export const flushSubmissionOutbox = async (submit) => {
