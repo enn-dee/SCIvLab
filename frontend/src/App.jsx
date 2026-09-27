@@ -31,6 +31,7 @@ import {
   flushSubmissionOutbox,
   removeOfflineDraft,
   subscribeToAutoSyncStatus,
+  subscribeToServerStatus,
 } from "./offline/offlineMode";
 import { syncAutoSyncDrafts } from "./offline/autoSync";
 import { apiFetch } from "./utils/api";
@@ -64,6 +65,13 @@ export default function App() {
         );
       });
     });
+    const unsubscribeServerStatus = subscribeToServerStatus((online) => {
+      if (!online) {
+        setAutoSyncStatuses((current) =>
+          current.filter((status) => status.state !== "syncing"),
+        );
+      }
+    });
     let lastKnownOnline = null;
     const checkHealth = () =>
       checkServerOnline(true).then((online) => {
@@ -79,6 +87,7 @@ export default function App() {
     const interval = window.setInterval(checkHealth, 15000);
     return () => {
       unsubscribe();
+      unsubscribeServerStatus();
       window.removeEventListener("online", checkHealth);
       window.removeEventListener("offline", checkHealth);
       window.clearInterval(interval);

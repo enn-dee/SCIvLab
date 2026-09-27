@@ -5,16 +5,19 @@ import {
   GraduationCap, Code2, ChevronLeft,
   ChevronRight, LogOut, Home,
 } from "lucide-react";
-import { isOffline, subscribeToServerStatus } from "../../offline/offlineMode";
+import {
+  subscribeToServerStatus,
+} from "../../offline/offlineMode";
 
 export default function StudentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => !isOffline());
+  const [isOnline, setIsOnline] = useState(null);
 
   useEffect(() => {
-    return subscribeToServerStatus(setIsOnline);
+    const unsubscribe = subscribeToServerStatus(setIsOnline);
+    return unsubscribe;
   }, []);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -75,7 +78,9 @@ export default function StudentSidebar() {
         >
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shrink-0 ${
-              isOnline
+              isOnline === null
+                ? "bg-gradient-to-br from-zinc-600 to-zinc-800"
+                : isOnline
                 ? "bg-gradient-to-br from-emerald-500 to-cyan-600"
                 : "bg-gradient-to-br from-red-600 to-rose-800"
             }`}
@@ -87,7 +92,9 @@ export default function StudentSidebar() {
 
               <div
                 className={`absolute -inset-2 rounded-xl blur-xl opacity-70 transition-all duration-700 group-hover:opacity-100 group-hover:blur-2xl ${
-                  isOnline
+                  isOnline === null
+                    ? "bg-gradient-to-r from-zinc-400/20 via-zinc-500/20 to-zinc-600/20"
+                    : isOnline
                     ? "bg-gradient-to-r from-emerald-400/30 via-cyan-500/30 to-blue-500/30"
                     : "bg-gradient-to-r from-red-500/40 via-rose-500/30 to-red-700/30"
                 }`}
@@ -97,7 +104,9 @@ export default function StudentSidebar() {
 
                 <span
                   className={`bg-[length:200%_200%] bg-gradient-to-r bg-clip-text text-transparent animate-gradient ${
-                    isOnline
+                    isOnline === null
+                      ? "from-zinc-300 via-zinc-400 to-zinc-500"
+                      : isOnline
                       ? "from-emerald-400 via-cyan-400 to-blue-500 drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]"
                       : "from-red-400 via-rose-400 to-red-600 drop-shadow-[0_0_12px_rgba(239,68,68,0.55)]"
                   }`}
@@ -110,10 +119,24 @@ export default function StudentSidebar() {
                 </span>
 
                 <span
-                  title={isOnline ? "Online" : "Offline"}
-                  aria-label={isOnline ? "Online" : "Offline"}
+                  title={
+                    isOnline === null
+                      ? "Checking server status"
+                      : isOnline
+                        ? "Online"
+                        : "Offline"
+                  }
+                  aria-label={
+                    isOnline === null
+                      ? "Checking server status"
+                      : isOnline
+                        ? "Online"
+                        : "Offline"
+                  }
                   className={`ml-1 h-2 w-2 rounded-full ${
-                    isOnline
+                    isOnline === null
+                      ? "bg-zinc-400"
+                      : isOnline
                       ? "bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"
                       : "bg-red-500 shadow-[0_0_10px_#ef4444]"
                   }`}

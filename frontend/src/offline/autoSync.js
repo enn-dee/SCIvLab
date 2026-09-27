@@ -3,6 +3,7 @@ import {
   getOfflineDraft,
   getAutoSyncDrafts,
   isAutoSyncEnabled,
+  checkServerOnline,
   publishAutoSyncStatus,
   removeOfflineDraft,
 } from "./offlineMode";
@@ -19,6 +20,8 @@ export const syncAutoSyncDrafts = () => {
   if (activeSync) return activeSync;
 
   activeSync = (async () => {
+    if (!(await checkServerOnline(true))) return;
+
     let queuedSubmissions;
     try {
       queuedSubmissions = await getQueuedSubmissions();
@@ -34,6 +37,7 @@ export const syncAutoSyncDrafts = () => {
     );
     const drafts = getAutoSyncDrafts();
     for (const draft of drafts) {
+      if (!(await checkServerOnline(true))) return;
       if (!isAutoSyncEnabled(draft.practicalId)) continue;
       const queuedKey = `${draft.practicalId}:${draft.language}`;
       if (queuedKeys.has(queuedKey)) continue;
