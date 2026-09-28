@@ -1,0 +1,46 @@
+import { Router } from "express";
+import algorithmRoutes from "../modules/algorithm/algorithm.routes.js";
+import algorithmSubmissionRoutes from "../modules/algorithmSubmission/algorithmSubmission.routes.js";
+import authRoutes from "../modules/auth/auth.routes.js";
+import practicalSubmissionRoutes from "../modules/submission/submission.routes.js";
+import adminRoutes from "../modules/admin/admin.routes.js";
+import adminStudentsRoutes from "../modules/admin/adminStudents.routes.js";
+import adminLabRoutes from "../modules/admin/adminLabs.routes.js";
+import assignmentRoutes from "../modules/admin/assignments.routes.js";
+import teacherRoutes from "../modules/teacher/teacher.routes.js";
+import teacherStudentsRoutes from "../modules/teacher/teacherStudents.routes.js";
+import labRoutes from "../modules/lab/lab.routes.js";
+import studentRoutes from "../modules/student/student.routes.js";
+import studentLabRoutes from "../modules/student/studentLab.routes.js";
+import practicalRoutes from "../modules/practical/practical.routes.js";
+import evaluationRoutes from "../modules/evaluation/evaluation.routes.js";
+import marksRoutes from "../modules/marks/marks.routes.js";
+import attendanceRoutes from "../modules/attendance/attendance.routes.js";
+import reportRoutes from "../modules/report/report.routes.js";
+import progressRoutes from "../modules/progress/progress.routes.js";
+import superAdminRoutes from "../modules/superAdmin/superAdmin.routes.js";
+
+const routes = Router();
+
+routes.use("/algorithms", algorithmRoutes);
+routes.use("/algo-progress", algorithmSubmissionRoutes);
+routes.use("/auth", authRoutes);
+routes.use("/submissions", practicalSubmissionRoutes);
+routes.use("/progress", progressRoutes);
+routes.use("/admin", adminRoutes);
+routes.use("/admin/students", adminStudentsRoutes);
+routes.use("/admin/labs", adminLabRoutes);
+routes.use("/assignments", assignmentRoutes);
+routes.use("/teacher", teacherRoutes);
+routes.use("/labs", labRoutes);
+routes.use("/lab-students", studentRoutes);
+routes.use("/practicals", practicalRoutes);
+routes.use("/evaluations", evaluationRoutes);
+routes.use("/marks", marksRoutes);
+routes.use("/attendance", attendanceRoutes);
+routes.use("/reports", reportRoutes);
+routes.use("/student", studentLabRoutes);
+routes.use("/teacher/students", teacherStudentsRoutes);
+routes.use("/superadmin", superAdminRoutes);
+
+export default routes;

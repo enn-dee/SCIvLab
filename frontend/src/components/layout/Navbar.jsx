@@ -1,52 +1,41 @@
 import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import "../../app.css";
+import "../../styles/app.css";
 
 import {
-    Axe,
-    ShieldUser,
-    Verified,
-    LogOut,
-    Sparkles,
-    ChevronRight
+  Axe,
+  ShieldUser,
+  Verified,
+  LogOut,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 
+import ThemeToggle from "../ui/ThemeToggle";
 import { motion } from "motion/react";
 
 import { Button } from "../ui/button";
 
 import { useNavigate } from "react-router-dom";
 
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger
-} from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 function Navbar() {
+  const [role, setRole] = useState(null);
 
-    const [role, setRole] = useState(null);
+  const [token, setToken] = useState(null);
 
-    const [token, setToken] = useState(null);
+  useEffect(() => {
+    setRole(localStorage.getItem("role"));
 
-    useEffect(() => {
+    setToken(localStorage.getItem("token"));
+  }, []);
 
-        setRole(
-            localStorage.getItem("role")
-        );
+  const navigate = useNavigate();
 
-        setToken(
-            localStorage.getItem("token")
-        );
-
-    }, []);
-
-    const navigate = useNavigate();
-
-    return (
-
-        <nav
-            className="
+  return (
+    <nav
+      className="
                 sticky
                 top-0
                 z-50
@@ -62,10 +51,9 @@ function Navbar() {
 
                 shadow-[0_8px_30px_rgb(0,0,0,0.12)]
             "
-        >
-
-            <div
-                className="
+    >
+      <div
+        className="
                     relative
                     flex
                     items-center
@@ -76,10 +64,9 @@ function Navbar() {
 
                     py-4
                 "
-            >
-
-                <div
-                    className="
+      >
+        <div
+          className="
                         absolute
                         inset-0
 
@@ -90,11 +77,11 @@ function Navbar() {
 
                         pointer-events-none
                     "
-                />
+        />
 
-                <div
-                    onClick={() => navigate("/")}
-                    className="
+        <div
+          onClick={() => navigate("/")}
+          className="
                         relative
                         flex
                         items-center
@@ -103,33 +90,27 @@ function Navbar() {
                         cursor-pointer
                         group
                     "
-                >
-
-                    <motion.div
-
-                        initial={{
-                            opacity: 0,
-                            scale: 0.6,
-                            rotate: -90
-                        }}
-
-                        animate={{
-                            opacity: 1,
-                            scale: 1,
-                            rotate: 0
-                        }}
-
-                        transition={{
-                            duration: 0.6,
-                            type: "spring"
-                        }}
-
-                        whileHover={{
-                            rotate: 12,
-                            scale: 1.08
-                        }}
-
-                        className="
+        >
+          <motion.div
+            initial={{
+              opacity: 0,
+              scale: 0.6,
+              rotate: -90,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              rotate: 0,
+            }}
+            transition={{
+              duration: 0.6,
+              type: "spring",
+            }}
+            whileHover={{
+              rotate: 12,
+              scale: 1.08,
+            }}
+            className="
                             relative
 
                             flex
@@ -149,10 +130,9 @@ function Navbar() {
                             shadow-lg
                             shadow-orange-500/30
                         "
-                    >
-
-                        <div
-                            className="
+          >
+            <div
+              className="
                                 absolute
                                 inset-0
 
@@ -162,29 +142,27 @@ function Navbar() {
 
                                 blur-xl
                             "
-                        />
+            />
 
-                        <Axe
-                            size={22}
-                            className="
+            <Axe
+              size={22}
+              className="
                                 relative
                                 z-10
                                 text-white
                             "
-                        />
+            />
+          </motion.div>
 
-                    </motion.div>
-
-                    <div
-                        className="
+          <div
+            className="
                             flex
                             flex-col
                             leading-none
                         "
-                    >
-
-                        <h1
-                            className="
+          >
+            <h1
+              className="
                                 text-xl
                                 md:text-2xl
 
@@ -192,10 +170,9 @@ function Navbar() {
 
                                 tracking-tight
                             "
-                        >
-
-                            <span
-                                className="
+            >
+              <span
+                className="
                                     bg-gradient-to-r
                                     from-cyan-400
                                     via-blue-500
@@ -204,21 +181,20 @@ function Navbar() {
                                     bg-clip-text
                                     text-transparent
                                 "
-                            >
-                                SCi
-                            </span>
+              >
+                SCi
+              </span>
 
-                            <span
-                                className="
+              <span
+                className="
                                     text-white
                                 "
-                            >
-                                VLab
-                            </span>
+              >
+                VLab
+              </span>
+            </h1>
 
-                        </h1>
-
-                        {/* <span
+            {/* <span
                             className="
                                 hidden
                                 md:flex
@@ -245,62 +221,50 @@ function Navbar() {
                             />
 
                         </span> */}
+          </div>
 
-                    </div>
-
-                    <motion.div
-                        animate={{
-                            rotate: [0, 12, -12, 0]
-                        }}
-
-                        transition={{
-                            repeat: Infinity,
-                            duration: 4
-                        }}
-                    >
-
-                        <Sparkles
-                            className="
+          <motion.div
+            animate={{
+              rotate: [0, 12, -12, 0],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 4,
+            }}
+          >
+            <Sparkles
+              className="
                                 text-yellow-400
                                 opacity-80
                             "
-                            size={16}
-                        />
+              size={16}
+            />
+          </motion.div>
+        </div>
 
-                    </motion.div>
-
-                </div>
-
-                <div
-                    className="
+        <div
+          className="
                         relative
                         flex
                         items-center
                         gap-3
                     "
-                >
-
-                    {role === "student" && token && (
-
-                        <div
-                            className="
+        >
+          {role === "student" && token && (
+            <div
+              className="
                                 flex
                                 items-center
                                 gap-3
                             "
-                        >
-
-                            <Tooltip>
-
-                                <TooltipTrigger asChild>
-
-                                    <motion.div
-
-                                        whileHover={{
-                                            scale: 1.08
-                                        }}
-
-                                        className="
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    whileHover={{
+                      scale: 1.08,
+                    }}
+                    className="
                                             flex
                                             items-center
                                             justify-center
@@ -318,64 +282,56 @@ function Navbar() {
                                             shadow-lg
                                             shadow-emerald-500/10
                                         "
-                                    >
-
-                                        <Verified
-                                            className="
+                  >
+                    <Verified
+                      className="
                                                 text-emerald-400
                                             "
-                                            size={18}
-                                        />
+                      size={18}
+                    />
+                  </motion.div>
+                </TooltipTrigger>
 
-                                    </motion.div>
-
-                                </TooltipTrigger>
-
-                                <TooltipContent
-                                    className="
+                <TooltipContent
+                  className="
                                         border-white/10
                                         bg-zinc-900
                                         text-white
                                     "
-                                >
-                                    <p>
-                                        Verified Student
-                                    </p>
-                                </TooltipContent>
+                >
+                  <p>Verified Student</p>
+                </TooltipContent>
+              </Tooltip>
 
-                            </Tooltip>
-
-                            <div
-                                className="
+              <div
+                className="
                                     hidden
                                     md:flex
 
                                     flex-col
                                 "
-                            >
-
-                                <span
-                                    className="
+              >
+                <span
+                  className="
                                         text-xs
                                         text-gray-500
                                     "
-                                >
-                                    Logged in as
-                                </span>
+                >
+                  Logged in as
+                </span>
 
-                                <span
-                                    className="
+                <span
+                  className="
                                         text-sm
                                         text-white
                                         font-semibold
                                     "
-                                >
-                                    Student
-                                </span>
+                >
+                  Student
+                </span>
+              </div>
 
-                            </div>
-
-                            {/* <motion.div
+              {/* <motion.div
                                 whileHover={{ scale: 1.08 }}
                                 className="cursor-pointer"
                             >
@@ -387,20 +343,15 @@ function Navbar() {
                                     <AvatarFallback>ND</AvatarFallback>
                                 </Avatar>
                             </motion.div> */}
+            </div>
+          )}
 
-                        </div>
-
-                    )}
-
-                    {role !== "student" && token && (
-
-                        <motion.div
-
-                            whileHover={{
-                                scale: 1.04
-                            }}
-
-                            className="
+          {role !== "student" && token && (
+            <motion.div
+              whileHover={{
+                scale: 1.04,
+              }}
+              className="
                                 flex
                                 items-center
                                 gap-2
@@ -420,17 +371,16 @@ function Navbar() {
                                 shadow-lg
                                 shadow-orange-500/10
                             "
-                        >
-
-                            <ShieldUser
-                                className="
+            >
+              <ShieldUser
+                className="
                                     text-orange-400
                                 "
-                                size={18}
-                            />
+                size={18}
+              />
 
-                            <span
-                                className="
+              <span
+                className="
                                     text-sm
                                     font-semibold
 
@@ -439,37 +389,29 @@ function Navbar() {
                                     hidden
                                     md:block
                                 "
-                            >
-                                Teacher Panel
-                            </span>
+              >
+                Teacher Panel
+              </span>
+            </motion.div>
+          )}
+          <ThemeToggle compact />
 
-                        </motion.div>
+          {token && (
+            <motion.div
+              whileHover={{
+                scale: 1.03,
+              }}
+              whileTap={{
+                scale: 0.96,
+              }}
+            >
+              <Button
+                onClick={() => {
+                  localStorage.clear();
 
-                    )}
-
-                    {token && (
-
-                        <motion.div
-                            whileHover={{
-                                scale: 1.03
-                            }}
-
-                            whileTap={{
-                                scale: 0.96
-                            }}
-                        >
-
-                            <Button
-
-                                onClick={() => {
-
-                                    localStorage.clear();
-
-                                    window.location.href =
-                                        "/login";
-                                }}
-
-                                className="
+                  window.location.href = "/login";
+                }}
+                className="
                                     relative
 
                                     overflow-hidden
@@ -501,10 +443,9 @@ function Navbar() {
                                     transition-all
                                     duration-300
                                 "
-                            >
-
-                                <div
-                                    className="
+              >
+                <div
+                  className="
                                         absolute
                                         inset-0
 
@@ -515,15 +456,12 @@ function Navbar() {
 
                                         transition
                                     "
-                                />
+                />
 
-                                <LogOut
-                                    size={16}
-                                    className="relative z-10"
-                                />
+                <LogOut size={16} className="relative z-10" />
 
-                                <span
-                                    className="
+                <span
+                  className="
                                         relative
                                         z-10
 
@@ -532,22 +470,16 @@ function Navbar() {
 
                                         font-medium
                                     "
-                                >
-                                    Logout
-                                </span>
-
-                            </Button>
-
-                        </motion.div>
-
-                    )}
-
-                </div>
-
-            </div>
-
-        </nav>
-    );
+                >
+                  Logout
+                </span>
+              </Button>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
 }
 
 export default Navbar;

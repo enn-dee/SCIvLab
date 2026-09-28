@@ -8,24 +8,24 @@ import {
 import Navbar from "./components/layout/Navbar";
 import TeacherNavbar from "./components/layout/TeacherNavbar";
 import { Toaster } from "react-hot-toast";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import LandingPage from "./pages/LandingPage";
-import TeacherLogin from "./pages/TeacherLogin";
-import TeacherRegister from "./pages/TeacherRegister";
-import TeacherDashboard from "./pages/TeacherDashboard";
-import TeacherLabDetail from "./pages/TeacherLabDetail";
-import StudentDashboard from "./pages/StudentDashboard";
-import StudentLabDetail from "./pages/StudentLabDetail";
-import AlgoDashboard from "./components/layout/AlgoDashboard";
-import AlgoWorkspace from "./components/layout/AlgoWorkspace";
-import ProtectedRoute from "./utils/ProtectedRoute";
-import TeacherRoute from "./utils/TeacherRoute";
-import TeacherStudents from "./pages/TeacherStudents";
+import Login from "./features/auth/pages/Login.jsx";
+import Register from "./features/auth/pages/Register.jsx";
+import LandingPage from "./features/landing/pages/LandingPage.jsx";
+import TeacherLogin from "./features/teacher/pages/TeacherLogin.jsx";
+import TeacherRegister from "./features/teacher/pages/TeacherRegister.jsx";
+import TeacherDashboard from "./features/teacher/pages/TeacherDashboard.jsx";
+import TeacherLabDetail from "./features/teacher/pages/TeacherLabDetail.jsx";
+import StudentDashboard from "./features/student/pages/StudentDashboard.jsx";
+import StudentLabDetail from "./features/student/pages/StudentLabDetail.jsx";
+import AlgoDashboard from "./features/algorithm/pages/AlgoDashboard.jsx";
+import AlgoWorkspace from "./features/algorithm/pages/AlgoWorkspace.jsx";
+import ProtectedRoute from "./features/auth/guards/ProtectedRoute.jsx";
+import TeacherRoute from "./features/auth/guards/TeacherRoute.jsx";
+import TeacherStudents from "./features/teacher/pages/TeacherStudents.jsx";
 import OfflineBanner from "./components/layout/OfflineBanner";
-import SuperAdminLogin from "./pages/SuperAdminLogin";
-import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import SuperAdminRoute from "./utils/SuperAdminRoute";
+import SuperAdminLogin from "./features/superAdmin/pages/SuperAdminLogin.jsx";
+import SuperAdminDashboard from "./features/superAdmin/pages/SuperAdminDashboard.jsx";
+import SuperAdminRoute from "./features/auth/guards/SuperAdminRoute.jsx";
 import {
   checkServerOnline,
   flushSubmissionOutbox,
@@ -34,7 +34,7 @@ import {
   subscribeToServerStatus,
 } from "./offline/offlineMode";
 import { syncAutoSyncDrafts } from "./offline/autoSync";
-import { apiFetch } from "./utils/api";
+import { apiFetch } from "./api/client.js";
 import { AlertTriangle, CheckCircle, X } from "lucide-react";
 
 import { useEffect, useState } from "react";
