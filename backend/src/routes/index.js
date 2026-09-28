@@ -19,8 +19,11 @@ import attendanceRoutes from "../modules/attendance/attendance.routes.js";
 import reportRoutes from "../modules/report/report.routes.js";
 import progressRoutes from "../modules/progress/progress.routes.js";
 import superAdminRoutes from "../modules/superAdmin/superAdmin.routes.js";
+import aiRoutes from "../modules/teacher/ai.routes.js";
 
 const routes = Router();
+
+routes.use("/teacher/ai", aiRoutes);
 
 routes.use("/algorithms", algorithmRoutes);
 routes.use("/algo-progress", algorithmSubmissionRoutes);
