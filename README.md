@@ -135,7 +135,7 @@ npm run dev
 
 # Import sample algorithms
 cd backend
-node seed/seedFullAlgos.js
+node src/db/seed/seedFullAlgos.js
 
 
 

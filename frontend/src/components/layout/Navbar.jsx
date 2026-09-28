@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import "../../app.css";
+import "../../styles/app.css";
 
 import {
   Axe,

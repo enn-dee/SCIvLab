@@ -1,4 +1,4 @@
-import { apiFetch } from "../utils/api";
+import { apiFetch } from "../api/client.js";
 import {
   getOfflineDraft,
   getAutoSyncDrafts,
