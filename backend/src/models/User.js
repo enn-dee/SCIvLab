@@ -20,6 +20,13 @@ const userSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
     password: { type: String, required: true },
     role: { type: String, enum: ["student", "admin"], default: "student" },
     // optional: batch, branch could be stored if needed

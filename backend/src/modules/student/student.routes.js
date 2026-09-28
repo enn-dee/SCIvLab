@@ -11,7 +11,7 @@ const enrol = async (lab, student, enrolledBy) => {
   const enrollment = await Enrollment.findOneAndUpdate(
     { labId: lab._id, studentId: student._id },
     { enrolledBy, status: "active" },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, new: true, runValidators: true },
   );
   // Keep legacy clients working while Enrollment becomes authoritative.
   if (!lab.students.some((id) => String(id) === String(student._id))) {
@@ -45,7 +45,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.post(
@@ -59,7 +59,7 @@ router.post(
         ...new Set(
           (req.body.rollNumbers || [])
             .map((roll) => roll.trim().toUpperCase())
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ];
       if (!rollNumbers.length)
@@ -80,13 +80,13 @@ router.post(
       res.json({
         enrolled: students.length,
         missing: rollNumbers.filter(
-          (roll) => !students.some((student) => student.rollNumber === roll)
+          (roll) => !students.some((student) => student.rollNumber === roll),
         ),
       });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.delete(
@@ -98,10 +98,10 @@ router.delete(
     try {
       await Enrollment.findOneAndUpdate(
         { labId: req.lab._id, studentId: req.params.studentId },
-        { status: "withdrawn" }
+        { status: "withdrawn" },
       );
       req.lab.students = req.lab.students.filter(
-        (id) => String(id) !== req.params.studentId
+        (id) => String(id) !== req.params.studentId,
       );
       await req.lab.save();
       // res.status(204).send();
@@ -112,7 +112,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 router.get(
@@ -130,7 +130,7 @@ router.get(
       if (!enrollments.length && req.lab.students.length) {
         const legacy = await Lab.findById(req.lab._id).populate(
           "students",
-          "fullName rollNumber"
+          "fullName rollNumber",
         );
         return res.json(legacy.students);
       }
@@ -138,7 +138,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 export default router;

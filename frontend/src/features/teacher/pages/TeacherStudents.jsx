@@ -11,9 +11,13 @@ import {
   Filter,
   Download,
   Loader2,
+  ChevronLeft,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
 export default function TeacherStudents() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -144,18 +148,30 @@ export default function TeacherStudents() {
     <div className="space-y-5">
       {/* HEADER */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Users size={22} className="text-purple-400" />
-            Student Management
-            <span className="text-sm text-gray-500 font-normal">
-              ({students.length} total)
-            </span>
-          </h2>
-          <p className="text-sm text-gray-400 mt-1">
-            System‑wide student accounts. Import CSV to create accounts with DOB
-            as password.
-          </p>
+        <div className="flex items-start gap-3">
+          {/* 🔥 Back to Dashboard */}
+          <button
+            onClick={() => navigate("/teacher/dashboard")}
+            className="mt-1 p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white transition flex items-center gap-1.5"
+            title="Back to Dashboard"
+          >
+            <ChevronLeft size={18} />
+            <span className="text-sm hidden sm:inline">Dashboard</span>
+          </button>
+
+          <div>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Users size={22} className="text-purple-400" />
+              Student Management
+              <span className="text-sm text-gray-500 font-normal">
+                ({students.length} total)
+              </span>
+            </h2>
+            <p className="text-sm text-gray-400 mt-1">
+              System‑wide student accounts. Import CSV to create accounts with
+              DOB as password.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -193,7 +209,7 @@ export default function TeacherStudents() {
           <Search size={16} className="absolute left-3 top-3 text-gray-500" />
           <input
             type="text"
-            placeholder="Search by name, roll number, or registration number..."
+            placeholder="Search by name, roll number, registration number, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -268,6 +284,7 @@ export default function TeacherStudents() {
                   </th>
                   <th className="p-3">Roll Number</th>
                   <th className="p-3">Registration No.</th>
+                  <th className="p-3">Email</th>
                   <th className="p-3">Full Name</th>
                   <th className="p-3">Batch</th>
                   <th className="p-3">Branch</th>
@@ -296,6 +313,9 @@ export default function TeacherStudents() {
                     </td>
                     <td className="p-3 text-gray-300">
                       {student.registrationNumber || "—"}
+                    </td>
+                    <td className="p-3 text-gray-400 text-xs">
+                      {student.email || "—"}
                     </td>
                     <td className="p-3 text-white">{student.fullName}</td>
                     <td className="p-3 text-gray-300">

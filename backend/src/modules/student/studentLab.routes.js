@@ -61,6 +61,7 @@ router.post(
       for (const [index, row] of results.entries()) {
         const roll = row.rollNumber?.trim().toUpperCase();
         const reg = row.registrationNumber?.trim().toUpperCase();
+        const email = row.email?.trim().toLowerCase();
         const fullName = row.fullName?.trim();
         const dob = row.dob?.trim(); // expected format: DDMMYYYY or DD-MM-YYYY etc.
         const batch = row.batch?.trim();
@@ -144,7 +145,9 @@ router.get("/labs", authMiddleware, async (req, res) => {
         { students: studentId },
         { _id: { $in: enrollmentLabIds } },
       ],
-    }).populate("teacherId", "fullName email").populate("students", "_id");
+    })
+      .populate("teacherId", "fullName email")
+      .populate("students", "_id");
 
     const activeEnrollments = await Enrollment.find({
       labId: { $in: labs.map((lab) => lab._id) },

@@ -87,35 +87,16 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    // const {
-    //   rollNumber,
-    //   fullName,
-    //   password
-    // } = req.body;
-
-    // let user = null;
-
-    // if (rollNumber) {
-
-    //   user = await User.findOne({
-    //     rollNumber: rollNumber.toUpperCase()
-    //   });
-
-    // } else if (fullName) {
-
-    //   user = await User.findOne({
-    //     fullName
-    //   });
-
-    // }
     const { rollNumber, fullName, password } = req.body;
     let user = null;
 
     if (rollNumber) {
+      const id = rollNumber.trim();
       user = await User.findOne({
         $or: [
-          { rollNumber: rollNumber.toUpperCase() },
-          { registrationNumber: rollNumber.toUpperCase() },
+          { rollNumber: id.toUpperCase() },
+          { registrationNumber: id.toUpperCase() },
+          { email: id.toLowerCase() },
         ],
       });
     } else if (fullName) {
