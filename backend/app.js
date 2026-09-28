@@ -66,7 +66,7 @@ app.use("/api/student", studentLabRoutes);
 app.use("/api/teacher/students", teacherStudentsRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 
-app.get("/health", (req, res) => {
+app.get(["/health", "/api/health"], (req, res) => {
   return res.status(200).send("ok");
 });
 

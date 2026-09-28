@@ -3,6 +3,7 @@ import {
   getCachedResponse,
   removeDisallowedCacheEntries,
 } from "../offline/offlineDb";
+import { checkServerOnline } from "../offline/serverStatus";
 
 const cacheKey = (endpoint) => {
   const user = localStorage.getItem("user") || "anonymous";
@@ -169,8 +170,11 @@ export const apiFetch = async (endpoint, options = {}) => {
   const testWeek = localStorage.getItem("scivlab:test-week");
   if (testWeek) headers["X-SCIVLab-Test-Week"] = testWeek;
 
-  if (!options.method || options.method === "GET") {
-    if (!navigator.onLine) {
+  const isGetRequest = !options.method || options.method === "GET";
+  const serverOnline = await checkServerOnline();
+
+  if (isGetRequest) {
+    if (!serverOnline) {
       const cachedResponse = await getOfflineResponse(endpoint);
       if (cachedResponse) return cachedResponse;
     }
@@ -185,6 +189,7 @@ export const apiFetch = async (endpoint, options = {}) => {
   } catch (error) {
     if (options.signal?.aborted) throw error;
     if (options.method && options.method !== "GET") throw error;
+    await checkServerOnline(true);
     const cachedResponse = await getOfflineResponse(endpoint);
     if (cachedResponse) return cachedResponse;
     throw error;
