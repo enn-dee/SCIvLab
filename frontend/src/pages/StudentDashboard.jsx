@@ -26,7 +26,7 @@ export default function StudentDashboard() {
   const fetchAllData = async () => {
     try {
       const [labsResult, algosResult, progressResult] = await Promise.allSettled([
-        apiFetch(`student/labs?includeEnrollmentStatus=1&fresh=1&statusAt=${Date.now()}`),
+        apiFetch("student/labs?includeEnrollmentStatus=1"),
         apiFetch("algorithms"),
         apiFetch("progress/user-progress"),
       ]);

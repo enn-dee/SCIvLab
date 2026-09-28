@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch } from "@/utils/api";
 import {
   hideExpiredPracticals,
@@ -8,6 +8,8 @@ import {
   getOfflineDraft,
   saveOfflineDraft,
   removeOfflineDraft,
+  isAutoSyncEnabled,
+  setAutoSyncEnabled,
 } from "@/offline/offlineMode";
 import { runOfflineTests } from "@/offline/offlineRunner";
 import { motion } from "motion/react";
@@ -41,6 +43,7 @@ const TABS = [
 export default function StudentLabDetail() {
   const { labId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [lab, setLab] = useState(null);
   const [practicals, setPracticals] = useState([]);
@@ -59,6 +62,7 @@ export default function StudentLabDetail() {
   const [editorPractical, setEditorPractical] = useState(null);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
+  const [autoSyncEnabled, setAutoSyncEnabledState] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [running, setRunning] = useState(false);
   const [runResults, setRunResults] = useState([]);
@@ -75,6 +79,7 @@ export default function StudentLabDetail() {
 
   const isMounted = useRef(true);
   const abortControllerRef = useRef(null);
+  const autoOpenedPracticalRef = useRef(null);
 
   const handleEditorMount = (editor, monaco) => {
     const errorMsg = "Copy-Paste not allowed";
@@ -209,6 +214,7 @@ export default function StudentLabDetail() {
     }
     setEditorPractical(practical);
     setShowEditor(true);
+    setAutoSyncEnabledState(isAutoSyncEnabled(practical._id));
     setRunResults([]);
     setRunOutput(null);
     setCustomExpected("");
@@ -257,6 +263,16 @@ export default function StudentLabDetail() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    const practicalId = searchParams.get("practical");
+    if (!practicalId || !practicals.length) return;
+    const practical = practicals.find((item) => item._id === practicalId);
+    if (practical && autoOpenedPracticalRef.current !== practicalId) {
+      autoOpenedPracticalRef.current = practicalId;
+      openEditor(practical);
+    }
+  }, [searchParams, practicals, openEditor]);
 
   const handleRunCode = useCallback(async () => {
     if (!editorPractical) return;
@@ -974,6 +990,53 @@ export default function StudentLabDetail() {
                     </option>
                   ))}
                 </select>
+                {lab?.kind === "academic" &&
+                  editorPractical?.weekSchedule?.status !== "locked" && (
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-gray-300">
+                      <span>Auto sync when online</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-label="Auto sync when online"
+                        aria-checked={autoSyncEnabled}
+                        onClick={() => {
+                          const enabled = !autoSyncEnabled;
+                          setAutoSyncEnabled(editorPractical._id, enabled);
+                          setAutoSyncEnabledState(enabled);
+                          if (enabled) {
+                            saveOfflineDraft(
+                              editorPractical._id,
+                              language,
+                              code,
+                              {
+                                labId: lab?._id || labId,
+                                labName: lab?.name || "Lab",
+                                practicalTitle: editorPractical.title,
+                                labKind: lab?.kind,
+                                offlineDraft:
+                                  isOffline() ||
+                                  Boolean(
+                                    getOfflineDraft(
+                                      editorPractical._id,
+                                      language,
+                                    ),
+                                  ),
+                              },
+                            );
+                          }
+                        }}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                          autoSyncEnabled ? "bg-emerald-500" : "bg-zinc-700"
+                        }`}
+                      >
+                        <span
+                          className={`h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                            autoSyncEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
                 <input
                   type="text"
                   placeholder="Expected output (optional)"
@@ -1135,8 +1198,22 @@ export default function StudentLabDetail() {
                   onChange={(value) => {
                     const nextCode = value || "";
                     setCode(nextCode);
-                    if (isOffline() && editorPractical?._id) {
-                      saveOfflineDraft(editorPractical._id, language, nextCode);
+                    if (
+                      (lab?.kind === "academic" || isOffline()) &&
+                      editorPractical?._id
+                    ) {
+                      saveOfflineDraft(
+                        editorPractical._id,
+                        language,
+                        nextCode,
+                        {
+                          labId: lab?._id || labId,
+                          labName: lab?.name || "Lab",
+                          practicalTitle: editorPractical.title,
+                          labKind: lab?.kind,
+                          offlineDraft: isOffline(),
+                        },
+                      );
                     }
                   }}
                   onMount={handleEditorMount}
@@ -1208,8 +1285,8 @@ export default function StudentLabDetail() {
                       >
                         Test {index + 1}: {result.passed ? "Passed" : "Failed"}
                       </span>
-                      <p className="mt-1 text-gray-400">
-                        Expected: {String(result.expected ?? "")} · Actual:{" "}
+                      <p className="mt-1 text-gray-400">Input: {String(result.input ?? "")} ·
+                        Expected Output: {String(result.expected ?? "")} · Actual Output:{" "}
                         {result.actualOutput || result.output || "(no output)"}
                       </p>
                     </div>
