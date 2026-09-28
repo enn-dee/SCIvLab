@@ -74,6 +74,7 @@ router.post(
       for (const [index, row] of results.entries()) {
         const roll = row.rollNumber?.trim().toUpperCase();
         const reg = row.registrationNumber?.trim().toUpperCase();
+        const email = row.email?.trim().toLowerCase();
         const fullName = row.fullName?.trim();
         const dob = row.dob?.trim();
         const batch = row.batch?.trim();
@@ -101,7 +102,11 @@ router.post(
         try {
           // Check if user already exists
           let user = await User.findOne({
-            $or: [{ rollNumber: roll }, { registrationNumber: reg }],
+            $or: [
+              { rollNumber: roll },
+              { registrationNumber: reg },
+              ...(email ? [{ email }] : []),
+            ],
           });
 
           if (!user) {
@@ -110,6 +115,7 @@ router.post(
               fullName,
               rollNumber: roll,
               registrationNumber: reg || undefined,
+              email: email || undefined,
               password: hashedPassword,
               role: "student",
               batch,
@@ -117,23 +123,17 @@ router.post(
             });
           } else {
             // Update missing fields if needed
-            if (!user.registrationNumber && reg) {
-              user.registrationNumber = reg;
-              await user.save();
-            }
-            if (!user.batch && batch) {
-              user.batch = batch;
-              await user.save();
-            }
-            if (!user.branch && branch) {
-              user.branch = branch;
-              await user.save();
-            }
+            if (!user.registrationNumber && reg) user.registrationNumber = reg;
+            if (!user.email && email) user.email = email;
+            if (!user.batch && batch) user.batch = batch;
+            if (!user.branch && branch) user.branch = branch;
+            await user.save();
           }
 
           createdStudents.push({
             roll,
             registrationNumber: reg,
+            email,
             fullName,
             batch,
             branch,

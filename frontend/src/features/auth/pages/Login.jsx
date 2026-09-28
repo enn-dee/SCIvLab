@@ -71,8 +71,8 @@ export default function Login() {
               <input
                 type="text"
                 value={rollNumber}
-                onChange={(e) => setRollNumber(e.target.value.toUpperCase())}
-                placeholder="Roll Number"
+                onChange={(e) => setRollNumber(e.target.value)}
+                placeholder="Roll No / Reg No / Email"
                 className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-black/30 border border-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
@@ -110,7 +110,10 @@ export default function Login() {
             <div className="mt-4 p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-sm text-center">
               <p>Accounts are created by your teacher.</p>
               <p className="text-xs text-gray-400 mt-1">
-                Use your roll number and DOB (DDMMYYYY) to log in.
+                <p className="text-xs text-gray-400 mt-1">
+                  Use your roll number, registration number, or email with DOB
+                  (DDMMYYYY) as password.
+                </p>
               </p>
             </div>
 
