@@ -3,6 +3,7 @@ import Editor from "@monaco-editor/react";
 
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { useTheme } from "@/utils/ThemeContext";
 
 import {
   Play,
@@ -32,6 +33,7 @@ function CodeTab({ algo }) {
   const [submitted, setSubmitted] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const editorRef = useRef(null);
+  const { theme } = useTheme();
 
   const getTemplate = () => {
     const starter = algo?.problem?.starterCode?.python || "";
@@ -521,7 +523,7 @@ function CodeTab({ algo }) {
                           50,
                           getTemplate().prefix.split("\n").length + 1,
                         )}px`}
-                        theme="vs-dark"
+                        theme={theme === "light" ? "vs" : "vs-dark"}
                         language="python"
                         value={getTemplate().prefix.replace(/\n+$/, "")}
                         options={{
@@ -554,7 +556,7 @@ function CodeTab({ algo }) {
                     <Editor
                       key={algo.slug}
                       height="100%"
-                      theme="vs-dark"
+                      theme={theme === "light" ? "vs" : "vs-dark"}
                       language="python"
                       value={code}
                       onChange={handleCodeChange}

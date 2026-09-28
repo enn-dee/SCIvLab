@@ -34,6 +34,8 @@ import {
   Lock,
 } from "lucide-react";
 
+import { useTheme } from "@/utils/ThemeContext";
+
 const TABS = [
   { id: "practicals", label: "Practicals", icon: FlaskConical },
   { id: "marks", label: "Marks", icon: BarChart3 },
@@ -69,13 +71,15 @@ export default function StudentLabDetail() {
   const [runOutput, setRunOutput] = useState(null);
   const [failedTestCount, setFailedTestCount] = useState(0);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
-  const [submitConfirmationResolver, setSubmitConfirmationResolver] = useState(null);
+  const [submitConfirmationResolver, setSubmitConfirmationResolver] =
+    useState(null);
 
   const [showInstructions, setShowInstructions] = useState(false);
   const [instructionsContent, setInstructionsContent] = useState("");
   const [customExpected, setCustomExpected] = useState("");
   const [editorPrefix, setEditorPrefix] = useState("");
   const [editorSuffix, setEditorSuffix] = useState("");
+  const { theme } = useTheme();
 
   const isMounted = useRef(true);
   const abortControllerRef = useRef(null);
@@ -113,12 +117,12 @@ export default function StudentLabDetail() {
     try {
       const [labResult, pracResult, subResult, marksResult, attendanceResult] =
         await Promise.allSettled([
-        apiFetch(`labs/${labId}`, { signal }),
-        apiFetch(`practicals/lab/${labId}`, { signal }),
-        apiFetch("submissions/my", { signal }),
-        apiFetch(`marks/lab/${labId}`, { signal }),
-        apiFetch(`attendance/student/${getStudentId()}/${labId}`, { signal }),
-      ]);
+          apiFetch(`labs/${labId}`, { signal }),
+          apiFetch(`practicals/lab/${labId}`, { signal }),
+          apiFetch("submissions/my", { signal }),
+          apiFetch(`marks/lab/${labId}`, { signal }),
+          apiFetch(`attendance/student/${getStudentId()}/${labId}`, { signal }),
+        ]);
 
       if (!isMounted.current) return;
 
@@ -133,7 +137,9 @@ export default function StudentLabDetail() {
       const subData =
         subResult.status === "fulfilled" ? await subResult.value.json() : [];
       const marksData =
-        marksResult.status === "fulfilled" ? await marksResult.value.json() : [];
+        marksResult.status === "fulfilled"
+          ? await marksResult.value.json()
+          : [];
       const attData =
         attendanceResult.status === "fulfilled"
           ? await attendanceResult.value.json()
@@ -141,7 +147,10 @@ export default function StudentLabDetail() {
 
       setLab(labData);
       setPracticals(
-        hideExpiredPracticals(Array.isArray(pracData) ? pracData : [], labData?.deadline),
+        hideExpiredPracticals(
+          Array.isArray(pracData) ? pracData : [],
+          labData?.deadline,
+        ),
       );
 
       const subMap = {};
@@ -209,7 +218,9 @@ export default function StudentLabDetail() {
 
   const openEditor = useCallback(async (practical) => {
     if (practical.weekSchedule?.status === "upcoming") {
-      toast.error(`This practical unlocks in Week ${practical.weekSchedule.weekNumber}`);
+      toast.error(
+        `This practical unlocks in Week ${practical.weekSchedule.weekNumber}`,
+      );
       return;
     }
     setEditorPractical(practical);
@@ -306,7 +317,8 @@ export default function StudentLabDetail() {
             },
           );
           data = await response.json();
-          if (!response.ok) throw new Error(data.error || "Local execution failed");
+          if (!response.ok)
+            throw new Error(data.error || "Local execution failed");
         } catch (localError) {
           const results = runOfflineTests(
             editorPractical,
@@ -328,7 +340,8 @@ export default function StudentLabDetail() {
           },
         );
         data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Code execution failed");
+        if (!response.ok)
+          throw new Error(data.error || "Code execution failed");
       }
 
       // Custom input response
@@ -381,7 +394,14 @@ export default function StudentLabDetail() {
       if (lab?.kind === "academic") {
         let results;
         if (isOffline()) {
-          results = runOfflineTests(editorPractical, code, language, undefined, undefined, true);
+          results = runOfflineTests(
+            editorPractical,
+            code,
+            language,
+            undefined,
+            undefined,
+            true,
+          );
         } else {
           const testResponse = await apiFetch(
             `submissions/${editorPractical._id}/run?all=1`,
@@ -628,11 +648,11 @@ export default function StudentLabDetail() {
                         ? "opacity-50 bg-gray-800/20 border-gray-600/30 pointer-events-none select-none"
                         : isUpcomingWeek
                           ? "bg-white/[0.02] border-white/10"
-                        : practicalEval?.status === "approved"
-                          ? "bg-emerald-500/5 border-emerald-400/30"
-                          : practicalEval?.status === "rejected"
-                            ? "bg-red-500/5 border-red-400/30"
-                            : "bg-white/[0.04] border-white/10 hover:border-emerald-400/20"
+                          : practicalEval?.status === "approved"
+                            ? "bg-emerald-500/5 border-emerald-400/30"
+                            : practicalEval?.status === "rejected"
+                              ? "bg-red-500/5 border-red-400/30"
+                              : "bg-white/[0.04] border-white/10 hover:border-emerald-400/20"
                     }`}
                   >
                     {isUpcomingWeek && (
@@ -643,14 +663,17 @@ export default function StudentLabDetail() {
                             Locked
                           </span>
                           <span className="text-xs text-gray-300 sm:text-sm">
-                            Available when Week {p.weekSchedule.weekNumber} begins
+                            Available when Week {p.weekSchedule.weekNumber}{" "}
+                            begins
                           </span>
                         </div>
                       </div>
                     )}
                     <div
                       className={`flex items-start justify-between gap-4 ${
-                        isUpcomingWeek ? "blur-[1px] opacity-40 brightness-50" : ""
+                        isUpcomingWeek
+                          ? "blur-[1px] opacity-40 brightness-50"
+                          : ""
                       }`}
                     >
                       <div className="flex-1 min-w-0">
@@ -694,9 +717,12 @@ export default function StudentLabDetail() {
                         </div>
 
                         {p.description && (
-                          <p className="text-sm text-gray-400 mb-3">
-                            {p.description}
-                          </p>
+                          <div className="relative mb-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.08] via-cyan-500/[0.04] to-transparent px-4 py-3">
+                            <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 to-cyan-400" />
+                            <p className="text-[15px] font-semibold leading-6 text-emerald-100">
+                              {p.description}
+                            </p>
+                          </div>
                         )}
 
                         {deadline && (
@@ -793,9 +819,9 @@ export default function StudentLabDetail() {
                                 ? `Available Week ${p.weekSchedule.weekNumber}`
                                 : isReadOnlyWeek
                                   ? "View Code"
-                              : submissions[p._id]
-                                ? "Edit Code"
-                                : "Write Code"}
+                                  : submissions[p._id]
+                                    ? "Edit Code"
+                                    : "Write Code"}
                           </button>
                         ) : (
                           // Approved badge (only shown for academic labs)
@@ -1031,7 +1057,9 @@ export default function StudentLabDetail() {
                       >
                         <span
                           className={`h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                            autoSyncEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                            autoSyncEnabled
+                              ? "translate-x-[18px]"
+                              : "translate-x-[3px]"
                           }`}
                         />
                       </button>
@@ -1076,15 +1104,15 @@ export default function StudentLabDetail() {
                 )}
                 {lab?.kind === "academic" &&
                   editorPractical?.weekSchedule?.status !== "locked" && (
-                  <button
-                    onClick={handleRunCode}
-                    disabled={running}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
-                  >
-                    <Play size={12} />
-                    {running ? "Running..." : "Run"}
-                  </button>
-                )}
+                    <button
+                      onClick={handleRunCode}
+                      disabled={running}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
+                    >
+                      <Play size={12} />
+                      {running ? "Running..." : "Run"}
+                    </button>
+                  )}
                 {showSubmitConfirmation && (
                   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <motion.div
@@ -1097,10 +1125,13 @@ export default function StudentLabDetail() {
                           <AlertTriangle size={20} />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">Some tests failed</h3>
+                          <h3 className="text-lg font-semibold text-white">
+                            Some tests failed
+                          </h3>
                           <p className="mt-2 text-sm leading-6 text-gray-400">
-                            {failedTestCount} test case{failedTestCount === 1 ? "" : "s"} failed.
-                            You can still submit your code for teacher review.
+                            {failedTestCount} test case
+                            {failedTestCount === 1 ? "" : "s"} failed. You can
+                            still submit your code for teacher review.
                           </p>
                         </div>
                       </div>
@@ -1164,7 +1195,7 @@ export default function StudentLabDetail() {
                 <div className="shrink-0 border-b border-white/10">
                   <Editor
                     height={`${Math.max(40, editorPrefix.split("\n").length * 18 + 20)}px`}
-                    theme="vs-dark"
+                    theme={theme === "light" ? "vs" : "vs-dark"}
                     language={language === "cpp" ? "cpp" : language}
                     value={editorPrefix}
                     options={{
@@ -1192,7 +1223,7 @@ export default function StudentLabDetail() {
               <div className="flex-1 min-h-0">
                 <Editor
                   height="100%"
-                  theme="vs-dark"
+                  theme={theme === "light" ? "vs" : "vs-dark"}
                   language={language === "cpp" ? "cpp" : language}
                   value={code}
                   onChange={(value) => {
@@ -1218,8 +1249,10 @@ export default function StudentLabDetail() {
                   }}
                   onMount={handleEditorMount}
                   options={{
-                    readOnly: editorPractical?.weekSchedule?.status === "locked",
-                    domReadOnly: editorPractical?.weekSchedule?.status === "locked",
+                    readOnly:
+                      editorPractical?.weekSchedule?.status === "locked",
+                    domReadOnly:
+                      editorPractical?.weekSchedule?.status === "locked",
                     fontSize: 14,
                     minimap: { enabled: false },
                     padding: { top: 8, bottom: 8 },
@@ -1285,8 +1318,9 @@ export default function StudentLabDetail() {
                       >
                         Test {index + 1}: {result.passed ? "Passed" : "Failed"}
                       </span>
-                      <p className="mt-1 text-gray-400">Input: {String(result.input ?? "")} ·
-                        Expected Output: {String(result.expected ?? "")} · Actual Output:{" "}
+                      <p className="mt-1 text-gray-400">
+                        Input: {String(result.input ?? "")} · Expected Output:{" "}
+                        {String(result.expected ?? "")} · Actual Output:{" "}
                         {result.actualOutput || result.output || "(no output)"}
                       </p>
                     </div>
