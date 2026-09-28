@@ -4,6 +4,7 @@ import {
   PlayCircle,
   Sparkles,
   ArrowRight,
+  ArrowUpRight,
   BookOpen,
   ShieldCheck,
   BarChart3,
@@ -11,6 +12,9 @@ import {
   Cpu,
   Boxes,
   Orbit,
+  GraduationCap,
+  Shield,
+  Crown,
 } from "lucide-react";
 
 import { motion } from "motion/react";
@@ -407,90 +411,182 @@ function LandingPage() {
               challenges, progress tracking, and guided learning experiences.
             </motion.p>
 
-            {/* CTA */}
+            {/* PORTAL CARDS */}
 
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              {/* ─── Student Card ─── */}
+              <motion.button
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.6 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/login")}
+                className="
+            group relative overflow-hidden
+            rounded-3xl
+            border border-emerald-400/20
+            bg-gradient-to-br
+            from-emerald-500/10
+            via-emerald-500/[0.03]
+            to-transparent
+            backdrop-blur-xl
+            p-6
+            text-left
+            shadow-xl
+            transition-all duration-300
+            hover:border-emerald-400/40
+            hover:shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)]
+        "
+              >
+                <div
+                  className="
+                absolute inset-0
+                opacity-0 group-hover:opacity-100
+                transition duration-500
+                bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_60%)]
+            "
+                />
+
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="
+                        w-12 h-12
+                        rounded-2xl
+                        bg-emerald-500/15
+                        border border-emerald-400/30
+                        flex items-center justify-center
+                        transition-transform duration-300
+                        group-hover:scale-110
+                        group-hover:rotate-6
+                    "
+                    >
+                      <GraduationCap size={22} className="text-emerald-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Student</h3>
+                      <p className="text-xs text-emerald-300/80">
+                        Learn &amp; practice
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowUpRight
+                    size={18}
+                    className="text-emerald-300/60 group-hover:text-emerald-300 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </div>
+
+                <p className="relative mt-4 text-sm text-zinc-400 leading-6">
+                  Access your labs, solve practicals, and track algorithm
+                  progress.
+                </p>
+
+                <div className="relative mt-5 flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                  Login as Student
+                  <ArrowRight
+                    size={14}
+                    className="transition group-hover:translate-x-1"
+                  />
+                </div>
+              </motion.button>
+
+              {/* ─── Teacher Card ─── */}
+              <motion.button
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.6 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/teacher/login")}
+                className="
+            group relative overflow-hidden
+            rounded-3xl
+            border border-purple-400/20
+            bg-gradient-to-br
+            from-purple-500/10
+            via-purple-500/[0.03]
+            to-transparent
+            backdrop-blur-xl
+            p-6
+            text-left
+            shadow-xl
+            transition-all duration-300
+            hover:border-purple-400/40
+            hover:shadow-[0_20px_60px_-15px_rgba(168,85,247,0.3)]
+        "
+              >
+                <div
+                  className="
+                absolute inset-0
+                opacity-0 group-hover:opacity-100
+                transition duration-500
+                bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.18),transparent_60%)]
+            "
+                />
+
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="
+                        w-12 h-12
+                        rounded-2xl
+                        bg-purple-500/15
+                        border border-purple-400/30
+                        flex items-center justify-center
+                        transition-transform duration-300
+                        group-hover:scale-110
+                        group-hover:rotate-6
+                    "
+                    >
+                      <Shield size={22} className="text-purple-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Teacher</h3>
+                      <p className="text-xs text-purple-300/80">
+                        Manage &amp; evaluate
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowUpRight
+                    size={18}
+                    className="text-purple-300/60 group-hover:text-purple-300 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </div>
+
+                <p className="relative mt-4 text-sm text-zinc-400 leading-6">
+                  Create labs, manage students, and evaluate submissions.
+                </p>
+
+                <div className="relative mt-5 flex items-center gap-2 text-sm font-semibold text-purple-300">
+                  Login as Teacher
+                  <ArrowRight
+                    size={14}
+                    className="transition group-hover:translate-x-1"
+                  />
+                </div>
+              </motion.button>
+            </div>
+
+            {/* Super Admin / Principal link */}
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                delay: 0.45,
-                duration: 0.7,
-              }}
-              className="
-                flex flex-wrap
-                items-center
-                justify-center
-                gap-4
-                mt-10
-              "
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+              className="mt-8 text-center"
             >
-              <motion.div
-                whileHover={{
-                  scale: 1.05,
-                }}
-                whileTap={{
-                  scale: 0.96,
-                }}
+              <button
+                onClick={() => navigate("/superadmin/login")}
+                className="
+            inline-flex items-center gap-1.5
+            text-xs text-amber-300/70
+            hover:text-amber-200
+            transition
+        "
               >
-                <Button
-                  onClick={() => navigate("/register")}
-                  className="
-                    h-12 px-7
-                    rounded-2xl
-                    bg-emerald-500
-                    hover:bg-emerald-400
-                    text-black
-                    font-semibold
-                    text-base
-                    shadow-lg
-                    shadow-emerald-500/30
-                  "
-                >
-                  Get Started
-                  <motion.div
-                    animate={{
-                      x: [0, 4, 0],
-                    }}
-                    transition={{
-                      duration: 1.2,
-                      repeat: Infinity,
-                    }}
-                  >
-                    <ArrowRight size={18} />
-                  </motion.div>
-                </Button>
-              </motion.div>
-
-              <motion.div
-                whileHover={{
-                  scale: 1.05,
-                }}
-                whileTap={{
-                  scale: 0.96,
-                }}
-              >
-                <Button
-                  onClick={() => navigate("/login")}
-                  variant="outline"
-                  className="
-                    h-12 px-7
-                    rounded-2xl
-                    border-white/10
-                    bg-white/5
-                    hover:bg-white/10
-                    text-white
-                    text-base
-                  "
-                >
-                  Login
-                </Button>
-              </motion.div>
+                <Crown size={12} />
+                Super Admin / Principal Login
+              </button>
             </motion.div>
           </motion.div>
         </div>
