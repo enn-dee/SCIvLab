@@ -26,6 +26,10 @@ import OfflineBanner from "./components/layout/OfflineBanner";
 import SuperAdminLogin from "./features/superAdmin/pages/SuperAdminLogin.jsx";
 import SuperAdminDashboard from "./features/superAdmin/pages/SuperAdminDashboard.jsx";
 import SuperAdminRoute from "./features/auth/guards/SuperAdminRoute.jsx";
+import StudentExams from "./features/exam/pages/StudentExams.jsx";
+import TeacherExams from "./features/exam/pages/TeacherExams.jsx";
+import ExamWorkspace from "./features/exam/pages/ExamWorkspace.jsx";
+import ExamPreview from "./features/exam/pages/ExamPreview.jsx";
 import {
   checkServerOnline,
   flushSubmissionOutbox,
@@ -273,6 +277,7 @@ export default function App() {
                   element={<TeacherLabDetail />}
                 />
                 <Route path="/teacher/students" element={<TeacherStudents />} />
+                <Route path="/teacher/exams" element={<TeacherExams />} />
               </Route>
 
               {/* STUDENT - */}
@@ -294,6 +299,9 @@ export default function App() {
                 />
                 <Route path="/algo-dashboard" element={<AlgoDashboard />} />
                 <Route path="/algo/:id" element={<AlgoWorkspace />} />
+                <Route path="/student/exams" element={<StudentExams />} />
+                <Route path="/student/exams/:id" element={<ExamPreview />} />
+                <Route path="/student/exams/:id/start" element={<ExamWorkspace />} />
               </Route>
               {/* SUPER ADMIN */}
               <Route path="/superadmin/login" element={<SuperAdminLogin />} />
