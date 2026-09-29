@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   GraduationCap,
   Code2,
@@ -8,20 +8,44 @@ import {
   ChevronRight,
   LogOut,
   Home,
+  ClipboardCheck,
 } from "lucide-react";
+import { apiFetch } from "@/api/client.js";
 import { subscribeToServerStatus } from "../../offline/offlineMode";
 
 import ThemeToggle from "../ui/ThemeToggle";
+
+const SidebarContainer = motion.div;
 
 export default function StudentSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(null);
+  const [examNow, setExamNow] = useState(() => Date.now());
+  const [studentExams, setStudentExams] = useState([]);
 
   useEffect(() => {
     const unsubscribe = subscribeToServerStatus(setIsOnline);
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    apiFetch("exams/student")
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load exam status");
+        return response.json();
+      })
+      .then((exams) => {
+        if (mounted) setStudentExams(Array.isArray(exams) ? exams : []);
+      })
+      .catch((error) => console.error("Unable to load exam status:", error));
+    const timer = window.setInterval(() => setExamNow(Date.now()), 1000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -40,6 +64,13 @@ export default function StudentSidebar() {
       path: "/algo-dashboard",
       activePaths: ["/algo-dashboard", "/algo"],
     },
+    {
+      id: "exams",
+      label: "Exams",
+      icon: ClipboardCheck,
+      path: "/student/exams",
+      activePaths: ["/student/exams"],
+    },
   ];
 
   const isActive = (item) => {
@@ -48,6 +79,11 @@ export default function StudentSidebar() {
     }
     return location.pathname === item.path;
   };
+  const hasRunningExam = studentExams.some((exam) => {
+    const startsAt = exam.startTime ? new Date(exam.startTime).getTime() : null;
+    const endsAt = exam.endTime ? new Date(exam.endTime).getTime() : null;
+    return (!startsAt || examNow >= startsAt) && (!endsAt || examNow < endsAt);
+  });
 
   const handleLogout = () => {
     localStorage.clear();
@@ -55,7 +91,7 @@ export default function StudentSidebar() {
   };
 
   return (
-    <motion.div
+    <SidebarContainer
       animate={{ width: collapsed ? 72 : 260 }}
       className="relative h-screen bg-black/40 border-r border-white/10 backdrop-blur-xl flex flex-col shrink-0"
     >
@@ -174,7 +210,7 @@ export default function StudentSidebar() {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                 active
                   ? "bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-lg shadow-emerald-500/10"
                   : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -182,6 +218,13 @@ export default function StudentSidebar() {
               title={collapsed ? item.label : ""}
             >
               <Icon size={20} className="shrink-0" />
+              {item.id === "exams" && hasRunningExam && (
+                <span
+                  aria-label="An exam is currently running"
+                  title="An exam is currently running"
+                  className="absolute ml-4 mt-[-16px] h-2.5 w-2.5 animate-pulse rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24]"
+                />
+              )}
               {!collapsed && <span className="font-medium">{item.label}</span>}
               {!collapsed && active && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -203,6 +246,6 @@ export default function StudentSidebar() {
           {!collapsed && <span>Logout</span>}
         </button>
       </div>
-    </motion.div>
+    </SidebarContainer>
   );
 }
