@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { LogOut, Shield, GraduationCap } from "lucide-react";
+import { LogOut, Shield, GraduationCap, ClipboardCheck } from "lucide-react";
 import ThemeToggle from "../ui/ThemeToggle";
 
 export default function TeacherNavbar() {
@@ -42,6 +42,13 @@ export default function TeacherNavbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/teacher/exams")}
+            className="hidden sm:flex items-center gap-2 rounded-xl border border-purple-400/20 bg-purple-500/10 px-3 py-2 text-sm text-purple-300 hover:bg-purple-500/20 transition"
+          >
+            <ClipboardCheck size={16} />
+            Exams
+          </button>
           {teacher && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-400/20 bg-purple-500/10">
               <Shield size={14} className="text-purple-400" />

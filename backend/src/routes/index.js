@@ -19,8 +19,12 @@ import attendanceRoutes from "../modules/attendance/attendance.routes.js";
 import reportRoutes from "../modules/report/report.routes.js";
 import progressRoutes from "../modules/progress/progress.routes.js";
 import superAdminRoutes from "../modules/superAdmin/superAdmin.routes.js";
+import aiRoutes from "../modules/teacher/ai.routes.js";
+import examRoutes from "../modules/exam/exam.routes.js";
 
 const routes = Router();
+
+routes.use("/teacher/ai", aiRoutes);
 
 routes.use("/algorithms", algorithmRoutes);
 routes.use("/algo-progress", algorithmSubmissionRoutes);
@@ -42,5 +46,6 @@ routes.use("/reports", reportRoutes);
 routes.use("/student", studentLabRoutes);
 routes.use("/teacher/students", teacherStudentsRoutes);
 routes.use("/superadmin", superAdminRoutes);
+routes.use("/exams", examRoutes);
 
 export default routes;

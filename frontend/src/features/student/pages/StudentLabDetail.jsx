@@ -27,6 +27,8 @@ import {
   CalendarCheck,
   X,
   Send,
+  ChevronUp,
+  ChevronDown,
   RotateCcw,
   Code2,
   Play,
@@ -47,6 +49,7 @@ export default function StudentLabDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
   const [lab, setLab] = useState(null);
   const [practicals, setPracticals] = useState([]);
   const [submissions, setSubmissions] = useState({});
@@ -716,12 +719,102 @@ export default function StudentLabDetail() {
                           )}
                         </div>
 
+                        {/* ── Collapsible Description ── */}
                         {p.description && (
-                          <div className="relative mb-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.08] via-cyan-500/[0.04] to-transparent px-4 py-3">
+                          <div className="relative mb-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/[0.08] via-cyan-500/[0.04] to-transparent">
                             <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 to-cyan-400" />
-                            <p className="text-[15px] font-semibold leading-6 text-emerald-100">
-                              {p.description}
-                            </p>
+
+                            {/* Header — always visible, click to expand */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedDescriptions((prev) => ({
+                                  ...prev,
+                                  [p._id]: !prev[p._id],
+                                }))
+                              }
+                              className="w-full flex items-start justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition"
+                            >
+                              <p className="text-[15px] font-semibold leading-6 text-emerald-100">
+                                {p.description}
+                              </p>
+                              <div className="shrink-0 mt-1 text-emerald-300">
+                                {expandedDescriptions[p._id] ? (
+                                  <ChevronUp size={16} />
+                                ) : (
+                                  <ChevronDown size={16} />
+                                )}
+                              </div>
+                            </button>
+
+                            {/* Expanded details */}
+                            {expandedDescriptions[p._id] && (
+                              <div className="px-4 pb-4 space-y-3 border-t border-emerald-400/10 pt-3">
+                                {/* Input / Output */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  {p.inputFormat && (
+                                    <div className="rounded-xl border border-cyan-400/15 bg-cyan-500/[0.05] px-3 py-2.5">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 mb-1">
+                                        Input
+                                      </p>
+                                      <p className="text-xs leading-5 text-gray-300 whitespace-pre-wrap">
+                                        {p.inputFormat}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {p.outputFormat && (
+                                    <div className="rounded-xl border border-purple-400/15 bg-purple-500/[0.05] px-3 py-2.5">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">
+                                        Output
+                                      </p>
+                                      <p className="text-xs leading-5 text-gray-300 whitespace-pre-wrap">
+                                        {p.outputFormat}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Complexity */}
+                                {(p.timeComplexity || p.spaceComplexity) && (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {p.timeComplexity && (
+                                      <div className="rounded-xl border border-amber-400/15 bg-amber-500/[0.05] px-3 py-2.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300 mb-1">
+                                          Time Complexity
+                                        </p>
+                                        <p className="text-xs font-mono leading-5 text-amber-100">
+                                          {p.timeComplexity}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {p.spaceComplexity && (
+                                      <div className="rounded-xl border border-emerald-400/15 bg-emerald-500/[0.05] px-3 py-2.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 mb-1">
+                                          Space Complexity
+                                        </p>
+                                        <p className="text-xs font-mono leading-5 text-emerald-100">
+                                          {p.spaceComplexity}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Pseudocode */}
+                                {p.pseudocode && p.pseudocode.length > 0 && (
+                                  <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2.5">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                                      Pseudocode
+                                    </p>
+                                    <pre className="text-xs leading-5 text-gray-300 font-mono whitespace-pre-wrap">
+                                      {Array.isArray(p.pseudocode)
+                                        ? p.pseudocode.join("\n")
+                                        : p.pseudocode}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
