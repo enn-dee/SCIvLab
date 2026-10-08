@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import crypto from "crypto";
+import { matchesExpected } from "./outputChecker.js";
 
 const inputFor = (input) => {
   if (typeof input === "string") return input;
@@ -116,7 +117,14 @@ export const runLocalCases = async ({
     results.push({
       passed: customStdin
         ? !result.stderr && result.code === 0
-        : !result.stderr && result.code === 0 && actualOutput === String(test.expected ?? "").trim(),
+        : !result.stderr &&
+          result.code === 0 &&
+          matchesExpected(
+            actualOutput,
+            test.expected,
+            test.checker,
+            test.tolerance,
+          ),
       actualOutput,
       expected: test.expected,
       hidden: test.visibility !== "public",

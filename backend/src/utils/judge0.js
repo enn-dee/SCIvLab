@@ -1,5 +1,7 @@
 const languageIds = { python: 71, javascript: 63, c: 50, cpp: 54, java: 62 };
 
+import { matchesExpected } from "./outputChecker.js";
+
 const normalise = (value) =>
   String(value ?? "")
     .replace(/\r\n/g, "\n")
@@ -136,11 +138,17 @@ export async function runJudge0Cases({
         : "";
 
       const actualOutput = normalise(stdout);
-      const expectedNorm = normalise(String(testCase.expected ?? ""));
-
       results.push({
         caseId: testCase._id,
-        passed: !stderr && !compile_output && actualOutput === expectedNorm,
+        passed:
+          !stderr &&
+          !compile_output &&
+          matchesExpected(
+            actualOutput,
+            testCase.expected,
+            testCase.checker,
+            testCase.tolerance,
+          ),
         weight: testCase.weight || 1,
         runtimeMs: data.time ? Math.round(Number(data.time) * 1000) : undefined,
         memoryKb: data.memory,
