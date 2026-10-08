@@ -107,17 +107,31 @@ export const runLocalCases = async ({
 
   const results = [];
   for (const test of tests) {
-    const result = await runLocalExecution({
-      sourceCode,
-      language,
-      stdin: inputFor(test.input),
-      timeLimitSeconds: practical.execution?.timeLimitSeconds || 5,
-    });
+    let result;
+    try {
+      result = await runLocalExecution({
+        sourceCode,
+        language,
+        stdin: inputFor(test.input),
+        timeLimitSeconds: practical.execution?.timeLimitSeconds || 5,
+      });
+    } catch (error) {
+      const errorOutput = error instanceof Error ? error.message : String(error);
+      results.push({
+        passed: false,
+        actualOutput: errorOutput,
+        expected: test.expected,
+        hidden: test.visibility !== "public",
+        stderr: errorOutput,
+      });
+      continue;
+    }
     const actualOutput = result.stdout.trim();
+    const errorOutput = result.stderr.trim();
     results.push({
       passed: customStdin
-        ? !result.stderr && result.code === 0
-        : !result.stderr &&
+        ? !errorOutput && result.code === 0
+        : !errorOutput &&
           result.code === 0 &&
           matchesExpected(
             actualOutput,
@@ -125,10 +139,10 @@ export const runLocalCases = async ({
             test.checker,
             test.tolerance,
           ),
-      actualOutput,
+      actualOutput: errorOutput || actualOutput,
       expected: test.expected,
       hidden: test.visibility !== "public",
-      stderr: result.stderr,
+      stderr: errorOutput,
     });
   }
   return results;

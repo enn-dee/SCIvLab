@@ -750,6 +750,35 @@ export default function StudentLabDetail() {
                             {/* Expanded details */}
                             {expandedDescriptions[p._id] && (
                               <div className="px-4 pb-4 space-y-3 border-t border-emerald-400/10 pt-3">
+                                {p.objective && (
+                                  <div className="rounded-xl border border-emerald-400/15 bg-emerald-500/[0.05] px-3 py-2.5">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 mb-1">
+                                      Learning objective
+                                    </p>
+                                    <p className="text-xs leading-5 text-gray-300 whitespace-pre-wrap">
+                                      {p.objective}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {p.requiredConcepts?.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                                      Concepts to practice
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {p.requiredConcepts.map((concept) => (
+                                        <span
+                                          key={concept}
+                                          className="rounded-full border border-cyan-400/20 bg-cyan-500/[0.08] px-2.5 py-1 text-xs text-cyan-100"
+                                        >
+                                          {concept}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {/* Input / Output */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   {p.inputFormat && (
@@ -761,6 +790,56 @@ export default function StudentLabDetail() {
                                         {p.inputFormat}
                                       </p>
                                     </div>
+                                  )}
+
+                                  {p.constraints && (
+                                    <div className="rounded-xl border border-amber-400/15 bg-amber-500/[0.05] px-3 py-2.5">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300 mb-1">
+                                        Constraints
+                                      </p>
+                                      <p className="text-xs leading-5 text-gray-300 whitespace-pre-wrap">
+                                        {p.constraints}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {p.examples?.length > 0 && (
+                                    <div className="space-y-2">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                        Worked example
+                                      </p>
+                                      {p.examples.map((example, index) => (
+                                        <div
+                                          key={`${p._id}-example-${index}`}
+                                          className="grid grid-cols-1 gap-2 rounded-xl border border-white/10 bg-black/25 p-3 sm:grid-cols-2"
+                                        >
+                                          <pre className="whitespace-pre-wrap text-xs text-gray-300">
+                                            Input: {String(example.input ?? "(none)")}
+                                          </pre>
+                                          <pre className="whitespace-pre-wrap text-xs text-gray-300">
+                                            Output: {String(example.output ?? "")}
+                                          </pre>
+                                          {example.explanation && (
+                                            <p className="text-xs leading-5 text-gray-400 sm:col-span-2">
+                                              {example.explanation}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {p.hints?.length > 0 && (
+                                    <details className="rounded-xl border border-purple-400/15 bg-purple-500/[0.05] px-3 py-2.5">
+                                      <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                                        Hints
+                                      </summary>
+                                      <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs leading-5 text-gray-300">
+                                        {p.hints.map((hint) => (
+                                          <li key={hint}>{hint}</li>
+                                        ))}
+                                      </ol>
+                                    </details>
                                   )}
                                   {p.outputFormat && (
                                     <div className="rounded-xl border border-purple-400/15 bg-purple-500/[0.05] px-3 py-2.5">

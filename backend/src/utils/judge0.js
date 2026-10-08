@@ -137,7 +137,7 @@ export async function runJudge0Cases({
         ? Buffer.from(data.compile_output, "base64").toString("utf-8")
         : "";
 
-      const actualOutput = normalise(stdout);
+      const actualOutput = normalise(compile_output || stderr || stdout);
       results.push({
         caseId: testCase._id,
         passed:

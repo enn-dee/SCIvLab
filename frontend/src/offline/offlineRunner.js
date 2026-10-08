@@ -1,3 +1,28 @@
+const matchesExpected = (actual, expected, checker = "exact", tolerance = 0.000001) => {
+  const normalise = (value) => String(value ?? "").trim();
+  if (checker === "whitespace") {
+    return normalise(actual).split(/\s+/).filter(Boolean).join(" ") ===
+      normalise(expected).split(/\s+/).filter(Boolean).join(" ");
+  }
+  if (checker === "unordered_tokens") {
+    const actualTokens = normalise(actual).split(/\s+/).filter(Boolean).sort();
+    const expectedTokens = normalise(expected).split(/\s+/).filter(Boolean).sort();
+    return actualTokens.length === expectedTokens.length &&
+      actualTokens.every((token, index) => token === expectedTokens[index]);
+  }
+  if (checker === "numeric_tolerance") {
+    const actualNumbers = normalise(actual).split(/\s+/).filter(Boolean).map(Number);
+    const expectedNumbers = normalise(expected).split(/\s+/).filter(Boolean).map(Number);
+    return actualNumbers.length === expectedNumbers.length &&
+      actualNumbers.every((number, index) =>
+        Number.isFinite(number) &&
+        Number.isFinite(expectedNumbers[index]) &&
+        Math.abs(number - expectedNumbers[index]) <= tolerance,
+      );
+  }
+  return normalise(actual) === normalise(expected);
+};
+
 const formatInput = (input) => {
   if (typeof input === "string") return input;
   if (Array.isArray(input)) return input.join(" ");
@@ -42,7 +67,12 @@ export const runOfflineTests = (
       );
       const output = formatOutput(execute(formatInput(test.input)));
       return {
-        passed: output === formatOutput(test.expected),
+        passed: matchesExpected(
+          output,
+          test.expected,
+          test.checker,
+          test.tolerance,
+        ),
         output,
         expected: formatOutput(test.expected),
         hidden: test.visibility !== "public",
