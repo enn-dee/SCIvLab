@@ -42,9 +42,14 @@ const DIFFICULTIES = [
 const emptyForm = () => ({
   title: "",
   description: "",
+  objective: "",
   instructions: "",
   inputFormat: "",
   outputFormat: "",
+  constraints: "",
+  hints: [],
+  requiredConcepts: [],
+  examples: [],
   pseudocode: [],
   timeComplexity: "",
   spaceComplexity: "",
@@ -143,8 +148,13 @@ export default function PracticalsTab({ lab }) {
       setForm((prev) => ({
         ...prev,
         description: draft.description || prev.description,
+        objective: draft.objective || prev.objective,
         inputFormat: draft.inputFormat || "",
         outputFormat: draft.outputFormat || "",
+        constraints: draft.constraints || "",
+        hints: Array.isArray(draft.hints) ? draft.hints : [],
+        requiredConcepts: Array.isArray(draft.requiredConcepts) ? draft.requiredConcepts : [],
+        examples: Array.isArray(draft.examples) ? draft.examples : [],
         pseudocode: Array.isArray(draft.pseudocode) ? draft.pseudocode : [],
         timeComplexity: draft.timeComplexity || "",
         spaceComplexity: draft.spaceComplexity || "",
@@ -232,7 +242,7 @@ export default function PracticalsTab({ lab }) {
       ...prev,
       testCases: [
         ...prev.testCases,
-        { input: "", expected: "", visibility: "hidden", weight: 1 },
+        { input: "", expected: "", visibility: "hidden", weight: 1, checker: "exact", tolerance: 0.000001 },
       ],
     }));
   };
@@ -253,9 +263,14 @@ export default function PracticalsTab({ lab }) {
       const payload = {
         title: form.title,
         description: form.description,
+        objective: form.objective,
         instructions: form.instructions,
         inputFormat: form.inputFormat,
         outputFormat: form.outputFormat,
+        constraints: form.constraints,
+        hints: form.hints,
+        requiredConcepts: form.requiredConcepts,
+        examples: form.examples,
         pseudocode: form.pseudocode || [],
         timeComplexity: form.timeComplexity || "",
         spaceComplexity: form.spaceComplexity || "",
@@ -322,9 +337,14 @@ export default function PracticalsTab({ lab }) {
     setForm({
       title: p.title || "",
       description: p.description || "",
+      objective: p.objective || "",
       instructions: p.instructions || "",
       inputFormat: p.inputFormat || "",
       outputFormat: p.outputFormat || "",
+      constraints: p.constraints || "",
+      hints: Array.isArray(p.hints) ? p.hints : [],
+      requiredConcepts: Array.isArray(p.requiredConcepts) ? p.requiredConcepts : [],
+      examples: Array.isArray(p.examples) ? p.examples : [],
       pseudocode: Array.isArray(p.pseudocode) ? p.pseudocode : [],
       timeComplexity: p.timeComplexity || "",
       spaceComplexity: p.spaceComplexity || "",
@@ -359,6 +379,10 @@ export default function PracticalsTab({ lab }) {
     setShowAdvanced(
       !!p.inputFormat ||
         !!p.outputFormat ||
+        !!p.objective ||
+        !!p.constraints ||
+        (p.hints && p.hints.length > 0) ||
+        (p.requiredConcepts && p.requiredConcepts.length > 0) ||
         (p.pseudocode && p.pseudocode.length > 0) ||
         !!p.timeComplexity ||
         !!p.spaceComplexity,
@@ -526,6 +550,17 @@ export default function PracticalsTab({ lab }) {
             />
           </div>
 
+          <div>
+            <label className={labelCls}>Learning objective</label>
+            <textarea
+              placeholder="What should students understand or be able to do after this lab?"
+              value={form.objective}
+              onChange={(e) => setForm({ ...form, objective: e.target.value })}
+              rows={2}
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+
           {/* INPUT / OUTPUT FORMAT */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -634,6 +669,42 @@ export default function PracticalsTab({ lab }) {
                     }
                     className={`${inputCls} font-mono text-xs resize-none`}
                   />
+                </div>
+                <div>
+                  <label className={labelCls}>Constraints</label>
+                  <textarea
+                    value={form.constraints}
+                    onChange={(e) => setForm({ ...form, constraints: e.target.value })}
+                    rows={2}
+                    placeholder="Example: 1 <= N <= 1000"
+                    className={`${inputCls} resize-none`}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}>Required concepts</label>
+                    <textarea
+                      value={form.requiredConcepts.join("\n")}
+                      onChange={(e) =>
+                        setForm({ ...form, requiredConcepts: e.target.value.split("\n").filter(Boolean) })
+                      }
+                      rows={4}
+                      placeholder="One concept per line"
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Hints</label>
+                    <textarea
+                      value={form.hints.join("\n")}
+                      onChange={(e) =>
+                        setForm({ ...form, hints: e.target.value.split("\n").filter(Boolean) })
+                      }
+                      rows={4}
+                      placeholder="One hint per line"
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -814,6 +885,38 @@ export default function PracticalsTab({ lab }) {
                                   "weight",
                                   parseInt(e.target.value) || 0,
                                 )
+                              }
+                              className={`${inputCls} text-xs`}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-1">
+                              Output checker
+                            </label>
+                            <select
+                              value={tc.checker || "exact"}
+                              onChange={(e) => updateTestCase(i, "checker", e.target.value)}
+                              className={`${inputCls} text-xs`}
+                            >
+                              <option value="exact">Exact output</option>
+                              <option value="whitespace">Whitespace-insensitive</option>
+                              <option value="unordered_tokens">Unordered tokens</option>
+                              <option value="numeric_tolerance">Numeric tolerance</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-1">
+                              Numeric tolerance
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.000001"
+                              value={tc.tolerance ?? 0.000001}
+                              onChange={(e) =>
+                                updateTestCase(i, "tolerance", Number(e.target.value))
                               }
                               className={`${inputCls} text-xs`}
                             />

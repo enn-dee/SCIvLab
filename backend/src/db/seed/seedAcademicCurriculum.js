@@ -2,6 +2,7 @@ import connectDB from "../../config/db.js";
 import Lab from "../../models/Lab.js";
 import Practical from "../../models/Practical.js";
 import dijkstraPracticalConfig from "./seedDijkstraPractical.js";
+import { getSharedCurriculumContent } from "./sharedCurriculumContent.js";
 
 const curriculum = [
   {
@@ -127,6 +128,14 @@ function getTestCasesForTopic(language, topic) {
       { input: "-3", expected: "Negative", visibility: "hidden", weight: 2 },
       { input: "0", expected: "Zero", visibility: "hidden", weight: 2 },
     ];
+  } else if (topic.includes("Control flow")) {
+    publicTests = [
+      { input: "8", expected: "Even", visibility: "public", weight: 1 },
+    ];
+    hiddenTests = [
+      { input: "7", expected: "Odd", visibility: "hidden", weight: 1 },
+      { input: "0", expected: "Even", visibility: "hidden", weight: 1 },
+    ];
   } else if (topic.includes("Loops")) {
     publicTests = [
       { input: "5", expected: "15", visibility: "public", weight: 1 },
@@ -188,11 +197,10 @@ function getTestCasesForTopic(language, topic) {
       },
     ];
   } else if (topic.includes("File handling") || topic.includes("File I/O")) {
-    // Simple write/read – adjust to your starter code
     publicTests = [
       {
         input: "",
-        expected: "File written successfully",
+        expected: "Hello from the file.",
         visibility: "public",
         weight: 1,
       },
@@ -200,10 +208,22 @@ function getTestCasesForTopic(language, topic) {
     hiddenTests = [];
   } else if (topic.includes("Inheritance") || topic.includes("Polymorphism")) {
     publicTests = [
-      { input: "", expected: "Animal sound", visibility: "public", weight: 1 },
+      {
+        input: "",
+        expected: "Dog: Bark\nCat: Meow",
+        visibility: "public",
+        weight: 1,
+        checker: "whitespace",
+      },
     ];
     hiddenTests = [
-      { input: "", expected: "Animal sound", visibility: "hidden", weight: 2 },
+      {
+        input: "",
+        expected: "Dog: Bark\nCat: Meow",
+        visibility: "hidden",
+        weight: 1,
+        checker: "whitespace",
+      },
     ];
   } else if (
     topic.includes("Classes and objects") ||
@@ -284,8 +304,14 @@ function getTestCasesForTopic(language, topic) {
     ];
   }
 
-  // Return up to 3 hidden tests + public
-  return [...publicTests, ...hiddenTests.slice(0, 3)];
+  // Keep public examples first and remove accidental duplicate cases.
+  const seen = new Set();
+  return [...publicTests, ...hiddenTests.slice(0, 6)].filter((test) => {
+    const key = `${JSON.stringify(test.input)}:${JSON.stringify(test.expected)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // ─── Helper: detailed instructions based on language & topic ────────
@@ -373,27 +399,258 @@ function getDetailedInstructions(language, topic) {
 }
 
 // ─── Helper: starter template ──────────────────────────────────────────
-const templateFor = (language, title) => {
+const templateForRaw = (language, title) => {
+  const topic = title.toLowerCase();
   if (language === "c") {
+    if (topic.includes("program structure")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n",
+        starterSolution: "    /* TODO: print Hello, World! */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("variables")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int wholeNumber;\n    float decimalNumber;\n    char letter;\n\n    scanf(\"%d %f %c\", &wholeNumber, &decimalNumber, &letter);\n",
+        starterSolution: "    /* TODO: print the values in the required format */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("operators")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n",
+        starterSolution: "    /* TODO: calculate and print the five results */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("conditional")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int number;\n    scanf(\"%d\", &number);\n",
+        starterSolution: "    /* TODO: classify number and print Positive, Negative, or Zero */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("loops")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    int sum = 0;\n",
+        starterSolution: "    /* TODO: use a loop to calculate and print the sum */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("functions")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint add(int a, int b) {\n    /* TODO: return the sum */\n    return 0;\n}\n\nint multiply(int a, int b) {\n    /* TODO: return the product */\n    return 0;\n}\n\nint main(void) {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n",
+        starterSolution: "    /* TODO: call the functions and print their results */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("arrays")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int values[5];\n    for (int i = 0; i < 5; i++) {\n        scanf(\"%d\", &values[i]);\n    }\n    int sum = 0;\n",
+        starterSolution: "    /* TODO: calculate and print the sum and average */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("pointers")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    int value;\n    scanf(\"%d\", &value);\n    int *pointer = &value;\n",
+        starterSolution: "    /* TODO: modify the value through pointer and print it */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("structures")) {
+      return {
+        prefix: "#include <stdio.h>\n\nstruct Student {\n    char name[50];\n    int roll;\n    int marks;\n};\n\nint main(void) {\n    struct Student student;\n    scanf(\"%49s %d %d\", student.name, &student.roll, &student.marks);\n",
+        starterSolution: "    /* TODO: print the student's fields */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("file")) {
+      return {
+        prefix: "#include <stdio.h>\n\nint main(void) {\n    FILE *file = fopen(\"data.txt\", \"w\");\n    if (file == NULL) return 1;\n    /* TODO: write the requested data */\n    fclose(file);\n\n    file = fopen(\"data.txt\", \"r\");\n    if (file == NULL) return 1;\n",
+        starterSolution: "    /* TODO: write data, read it back, and print the content */",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
     return {
-      prefix: "#include <stdio.h>\n\nint main(void){ \n",
-      starterSolution: `    // Write your solution here\n    `,
+      prefix: "#include <stdio.h>\n\nint main(void) {\n",
+      starterSolution: "    /* Write the solution here. */",
       suffix: "\n    return 0;\n}\n",
     };
   }
   if (language === "cpp") {
+    if (topic.includes("program structure")) {
+      return {
+        prefix: "#include <iostream>\n\nint main() {\n",
+        starterSolution: "    // TODO: print Hello, World!",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("data types")) {
+      return {
+        prefix: "#include <iomanip>\n#include <iostream>\n\nint main() {\n    int wholeNumber;\n    double decimalNumber;\n    char letter;\n    std::cin >> wholeNumber >> decimalNumber >> letter;\n",
+        starterSolution: "    // TODO: print the values in the required format",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("functions")) {
+      return {
+        prefix: "#include <iostream>\n\nint add(int a, int b) { /* TODO: return the sum */ return 0; }\nint multiply(int a, int b) { /* TODO: return the product */ return 0; }\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n",
+        starterSolution: "    // TODO: call the functions and print their results",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("arrays")) {
+      return {
+        prefix: "#include <iostream>\n\nint main() {\n    int values[5];\n    for (int& value : values) std::cin >> value;\n    int sum = 0;\n",
+        starterSolution: "    // TODO: calculate and print the sum and average",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("pointers")) {
+      return {
+        prefix: "#include <iostream>\n\nint main() {\n    int value;\n    std::cin >> value;\n    int* pointer = &value;\n",
+        starterSolution: "    // TODO: modify the value through pointer and print it",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("file")) {
+      return {
+        prefix: "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::ofstream output(\"data.txt\");\n    std::ifstream input(\"data.txt\");\n    std::string line;\n",
+        starterSolution: "    // TODO: write data, read it back, and print the content",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("classes")) {
+      return {
+        prefix: "#include <iostream>\n#include <string>\n\nclass Student {\npublic:\n    Student(const std::string& name, int roll) : name(name), roll(roll) {}\n    void display() const { /* TODO: print the student details */ }\nprivate:\n    std::string name;\n    int roll;\n};\n\nint main() {\n    std::string name;\n    int roll;\n    std::cin >> name >> roll;\n    Student student(name, roll);\n",
+        starterSolution: "    // TODO: display the student's details",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("inheritance") || topic.includes("polymorphism")) {
+      return {
+        prefix: "#include <iostream>\n\nclass Animal {\npublic:\n    virtual void sound() const { /* TODO: implement base behavior */ }\n    virtual ~Animal() = default;\n};\n\nclass Dog : public Animal {\npublic:\n    void sound() const override { /* TODO: implement Dog behavior */ }\n};\n\nclass Cat : public Animal {\npublic:\n    void sound() const override { /* TODO: implement Cat behavior */ }\n};\n\nint main() {\n    Dog dog;\n    Cat cat;\n    Animal* animals[] = {&dog, &cat};\n",
+        starterSolution: "    // TODO: call sound through the base-class pointers",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
+    if (topic.includes("collections") || topic.includes("stl")) {
+      return {
+        prefix: "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> values;\n    int value;\n    while (std::cin >> value) values.push_back(value);\n",
+        starterSolution: "    // TODO: sort the values and print them",
+        suffix: "\n    return 0;\n}\n",
+      };
+    }
     return {
-      prefix: "#include <iostream>\nusing namespace std;\n\nint main(){\n",
-      starterSolution: `    // Write your solution here\n    `,
+      prefix: "#include <iostream>\n\nint main() {\n",
+      starterSolution: "    /* Write the solution here. */",
       suffix: "\n    return 0;\n}\n",
     };
   }
-  // Java
+  if (topic.includes("program structure")) {
+    return {
+      prefix: "public class Main {\n    public static void main(String[] args) {\n",
+      starterSolution: "        // TODO: print Hello, World!",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("control flow")) {
+    return {
+      prefix: "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        int number = scanner.nextInt();\n",
+      starterSolution: "        // TODO: classify the number as Even or Odd",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("data types")) {
+    return {
+      prefix: "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        int wholeNumber = scanner.nextInt();\n        double decimalNumber = scanner.nextDouble();\n        char letter = scanner.next().charAt(0);\n",
+      starterSolution: "        // TODO: print the values in the required format",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("methods") || topic.includes("arrays")) {
+    return {
+      prefix: "import java.util.Scanner;\n\npublic class Main {\n    static int sum(int[] values) {\n        int total = 0;\n        for (int value : values) total += value;\n        return total;\n    }\n\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        int[] values = new int[5];\n        for (int i = 0; i < values.length; i++) values[i] = scanner.nextInt();\n",
+      starterSolution: "        // TODO: call sum and print the sum and average",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("classes")) {
+    return {
+      prefix: "import java.util.Scanner;\n\npublic class Main {\n    static class Student {\n        private final String name;\n        private final int roll;\n\n        Student(String name, int roll) {\n            this.name = name;\n            this.roll = roll;\n        }\n\n        void display() {\n            /* TODO: print the student details */\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        String name = scanner.next();\n        int roll = scanner.nextInt();\n        Student student = new Student(name, roll);\n",
+      starterSolution: "        // TODO: display the student's details",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("inheritance")) {
+    return {
+      prefix: "public class Main {\n    static class Animal {\n        void sound() { /* TODO: implement base behavior */ }\n    }\n\n    static class Dog extends Animal {\n        @Override void sound() { /* TODO: implement Dog behavior */ }\n    }\n\n    static class Cat extends Animal {\n        @Override void sound() { /* TODO: implement Cat behavior */ }\n    }\n\n    public static void main(String[] args) {\n        Animal[] animals = {new Dog(), new Cat()};\n",
+      starterSolution: "        // TODO: call sound polymorphically for each animal",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("interfaces")) {
+    return {
+      prefix: "public class Main {\n    interface Drawable {\n        void draw();\n    }\n\n    static class Circle implements Drawable {\n        public void draw() { /* TODO: implement drawing */ }\n    }\n\n    public static void main(String[] args) {\n        Drawable shape = new Circle();\n",
+      starterSolution: "        // TODO: call draw through the interface",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("exception")) {
+    return {
+      prefix: "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        int numerator = scanner.nextInt();\n        int denominator = scanner.nextInt();\n",
+      starterSolution: "        // TODO: handle division and the zero-denominator exception",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("collections")) {
+    return {
+      prefix: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        List<Integer> values = new ArrayList<>();\n        while (scanner.hasNextInt()) values.add(scanner.nextInt());\n",
+      starterSolution: "        // TODO: sort the collection and print its values",
+      suffix: "\n    }\n}\n",
+    };
+  }
+  if (topic.includes("file")) {
+    return {
+      prefix: "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        try (PrintWriter writer = new PrintWriter(\"data.txt\")) {\n            /* TODO: write the requested data */\n        } catch (IOException error) {\n            return;\n        }\n\n        try (BufferedReader reader = new BufferedReader(new FileReader(\"data.txt\"))) {\n",
+      starterSolution: "            // TODO: read the file and print its content",
+      suffix: "\n        } catch (IOException error) {\n            System.out.println(\"File error\");\n        }\n    }\n}\n",
+    };
+  }
+  // Java fallback: the editable area remains inside a valid Main class.
   return {
-    prefix:
-      "public class Main {\n    public static void main(String[] args){\n",
-    starterSolution: `        // Write your solution here\n        `,
+    prefix: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n",
+    starterSolution: "        // Write the solution here.",
     suffix: "\n    }\n}\n",
+  };
+};
+
+// Keep only imports/includes locked. The complete program scaffold stays in
+// the editable middle editor so students can implement every required part.
+const templateFor = (language, title) => {
+  const template = templateForRaw(language, title);
+  const topic = title.toLowerCase();
+  const requiresEditableScaffold = [
+    "functions",
+    "file",
+    "classes",
+    "inheritance",
+    "polymorphism",
+    "interfaces",
+  ].some((part) => topic.includes(part));
+
+  if (!requiresEditableScaffold) return template;
+
+  const headerPattern =
+    language === "java"
+      ? /^(?:import [^\n]+\n)+/
+      : /^(?:#include [^\n]+\n)+/;
+  const header = template.prefix.match(headerPattern)?.[0] || "";
+  return {
+    prefix: header,
+    starterSolution: `${template.prefix.slice(header.length)}${template.starterSolution || ""}${template.suffix || ""}`,
+    suffix: "",
   };
 };
 
@@ -431,15 +688,31 @@ const seed = async () => {
 
         // ── Build the practical fields based on custom or dev ──
         let description, instructions, starterTemplate, testCases;
+        let objective = "";
+        let examples = [];
+        let hints = [];
+        let requiredConcepts = [];
+        let constraints = "";
+        let inputFormat = "";
+        let outputFormat = "";
 
         if (customPractical) {
           description = customPractical.description;
           instructions = customPractical.instructions;
           starterTemplate = customPractical.starterTemplate;
           testCases = customPractical.testCases;
+          objective = customPractical.description;
         } else {
-          description = `Core ${item.name} exercise: ${title}.`;
-          instructions = getDetailedInstructions(item.language, title);
+          const content = getSharedCurriculumContent(item.language, title);
+          description = content.objective;
+          instructions = `${content.instructions}\n\nInput format\n${content.constraints}\n\nExample\nInput: ${content.examples[0].input || "(none)"}\nOutput: ${content.examples[0].output}`;
+          objective = content.objective;
+          examples = content.examples;
+          hints = content.hints;
+          requiredConcepts = content.requiredConcepts;
+          constraints = content.constraints;
+          inputFormat = content.constraints;
+          outputFormat = String(content.examples[0].output ?? "");
           starterTemplate = {
             [item.language]: templateFor(item.language, title),
           };
@@ -451,6 +724,13 @@ const seed = async () => {
           title: `${index + 1}. ${title}`,
           description,
           instructions,
+          objective,
+          examples,
+          hints,
+          requiredConcepts,
+          constraints,
+          inputFormat,
+          outputFormat,
           order: index + 1,
           starterTemplate,
           testCases,
