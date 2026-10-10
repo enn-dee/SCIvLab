@@ -16,7 +16,6 @@ import {
   Activity,
   Sparkles,
   Trash2,
-  ClipboardCheck,
 } from "lucide-react";
 
 import TeacherNavbar from "../../../components/layout/TeacherNavbar";
@@ -163,22 +162,6 @@ export default function TeacherDashboard() {
                 <Users size={18} />
                 Manage Students
               </button>
-
-              {/* Exam Module button */}
-              <motion.button
-                onClick={() => navigate("/teacher/exams")}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative flex items-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border border-amber-400/30 px-5 py-2.5 text-amber-300 font-medium transition-all hover:border-amber-400/50 hover:from-amber-500/30 hover:via-orange-500/30 hover:to-red-500/30 hover:shadow-lg hover:shadow-amber-500/20"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-orange-400/5" />
-                <ClipboardCheck size={18} className="relative" />
-                <span className="relative">Exam Module</span>
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
-                </span>
-              </motion.button>
 
               {/* New Lab button */}
               <button
