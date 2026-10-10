@@ -8,6 +8,9 @@ import {
 } from "../../middleware/labAccess.js";
 import { recordAudit } from "../../utils/audit.js";
 import Enrollment from "../../models/Enrollment.js";
+import User from "../../models/User.js";
+import Teacher from "../../models/Teacher.js";
+import { sendPracticalNotification } from "../../utils/emailService.js";
 import {
   getPracticalWeekState,
   getTestWeek,
@@ -64,6 +67,52 @@ router.post(
         action: "created",
         after: practical.toObject(),
       });
+
+      // Notify enrolled students (fire-and-forget)
+      const enrollments = await Enrollment.find({
+        labId: req.lab._id,
+        status: "active",
+      }).select("studentId");
+      const studentIds = enrollments.map((e) => e.studentId);
+      const students = await User.find({
+        _id: { $in: studentIds },
+        role: "student",
+      })
+        .select("fullName email")
+        .lean();
+      const withEmail = students.filter((s) => s.email);
+
+      if (withEmail.length > 0) {
+        const teacher = await Teacher.findById(req.user.id)
+          .select("fullName")
+          .lean();
+
+        console.log(`[mail] Queuing ${withEmail.length} practical notification(s)...`);
+
+        Promise.allSettled(
+          withEmail.map((student) =>
+            sendPracticalNotification({
+              student,
+              practical: practical.toObject(),
+              labName: req.lab.name,
+              teacherName: teacher?.fullName,
+            }),
+          ),
+        ).then((results) => {
+          const sent = results.filter((r) => r.value?.success).length;
+          const failed = results.filter(
+            (r) => r.status === "rejected" || r.value?.success === false,
+          );
+          console.log(`[mail] Emails sent: ${sent}/${withEmail.length}`);
+          if (failed.length > 0) {
+            console.error(
+              "[error] Failed emails:",
+              failed.map((f) => f.reason?.message || f.value?.error),
+            );
+          }
+        });
+      }
+
       res.status(201).json(practical);
     } catch (error) {
       next(error);

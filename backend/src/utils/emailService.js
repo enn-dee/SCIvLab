@@ -146,18 +146,7 @@ export const sendExamNotification = async ({ student, exam, teacherName }) => {
         </table>
       </div>
 
-      ${
-        exam.instructions
-          ? `<div style="background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.2); border-radius: 10px; padding: 14px; margin: 20px 0;">
-              <p style="margin: 0 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #67e8f9;">
-                Instructions
-              </p>
-              <p style="margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #cbd5e1;">
-                ${exam.instructions}
-              </p>
-            </div>`
-          : ""
-      }
+      
 
       <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 10px; padding: 12px; margin: 20px 0; font-size: 13px; color: #fde68a;">
         ⚠️ Do not refresh the page during the exam. Switching windows or exiting
@@ -180,6 +169,88 @@ export const sendExamNotification = async ({ student, exam, teacherName }) => {
   return sendEmail({
     to: student.email,
     subject: `📝 New Exam: ${exam.title}`,
+    html,
+  });
+};
+
+// ─── Practical notification email ────────────────────────────────
+export const sendPracticalNotification = async ({ student, practical, labName, teacherName }) => {
+  if (!student?.email) {
+    return { skipped: true, reason: "Student has no email" };
+  }
+
+  const deadlineStr = practical.deadline
+    ? new Date(practical.deadline).toLocaleString("en-IN", {
+        dateStyle: "full",
+        timeStyle: "short",
+      })
+    : "No deadline";
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e7eb; padding: 24px; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #34d399; margin: 0; font-size: 22px;">
+          🧪 New Practical Published
+        </h1>
+      </div>
+
+      <p style="font-size: 15px; line-height: 1.6;">
+        Hi <strong>${student.fullName || "Student"}</strong>,
+      </p>
+
+      <p style="font-size: 15px; line-height: 1.6;">
+        <strong>${teacherName || "Your teacher"}</strong> has published a new practical
+        in <strong>${labName || "your lab"}</strong>. Here are the details:
+      </p>
+
+      <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 10px; padding: 18px; margin: 20px 0;">
+        <table style="width: 100%; font-size: 14px; color: #d1d5db;">
+          <tr>
+            <td style="padding: 6px 0; color: #9ca3af;">Practical</td>
+            <td style="padding: 6px 0; color: #fff; font-weight: 600; text-align: right;">
+              ${practical.title}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #9ca3af;">Lab</td>
+            <td style="padding: 6px 0; color: #34d399; font-weight: 600; text-align: right;">
+              ${labName || "—"}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #9ca3af;">Deadline</td>
+            <td style="padding: 6px 0; color: #fff; text-align: right;">
+              ${deadlineStr}
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      ${
+        practical.description
+          ? `<div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; padding: 14px; margin: 20px 0; font-size: 14px; color: #c7d2fe;">
+              <strong style="color: #818cf8;">Description:</strong><br/>
+              ${practical.description}
+            </div>`
+          : ""
+      }
+
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/student/lab/${practical.labId}?practical=${practical._id}"
+           style="display: inline-block; background: linear-gradient(135deg, #34d399, #6366f1); color: #000; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          View Practical
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #6b7280; text-align: center; margin-top: 32px;">
+        This is an automated message from SCiVLab. Please do not reply.
+      </p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: student.email,
+    subject: `🧪 New Practical: ${practical.title}`,
     html,
   });
 };
