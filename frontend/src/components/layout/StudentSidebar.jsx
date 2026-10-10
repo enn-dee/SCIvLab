@@ -82,7 +82,8 @@ export default function StudentSidebar() {
   const hasRunningExam = studentExams.some((exam) => {
     const startsAt = exam.startTime ? new Date(exam.startTime).getTime() : null;
     const endsAt = exam.endTime ? new Date(exam.endTime).getTime() : null;
-    return (!startsAt || examNow >= startsAt) && (!endsAt || examNow < endsAt);
+    const bufferMs = 60 * 60 * 1000;
+    return (!startsAt || examNow >= startsAt - bufferMs) && (!endsAt || examNow < endsAt);
   });
 
   const handleLogout = () => {
@@ -205,17 +206,21 @@ export default function StudentSidebar() {
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
+          const locked = hasRunningExam && item.id !== "exams";
 
           return (
             <button
               key={item.id}
-              onClick={() => navigate(item.path)}
+              onClick={() => !locked && navigate(item.path)}
+              disabled={locked}
               className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                active
-                  ? "bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-lg shadow-emerald-500/10"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+                locked
+                  ? "opacity-40 cursor-not-allowed"
+                  : active
+                    ? "bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-lg shadow-emerald-500/10"
+                    : "text-gray-400 hover:bg-white/5 hover:text-white"
               }`}
-              title={collapsed ? item.label : ""}
+              title={collapsed ? item.label : locked ? "Locked during exam" : ""}
             >
               <Icon size={20} className="shrink-0" />
               {item.id === "exams" && hasRunningExam && (
@@ -226,7 +231,7 @@ export default function StudentSidebar() {
                 />
               )}
               {!collapsed && <span className="font-medium">{item.label}</span>}
-              {!collapsed && active && (
+              {!collapsed && active && !locked && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" />
               )}
             </button>
