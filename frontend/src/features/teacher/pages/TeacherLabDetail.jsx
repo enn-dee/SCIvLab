@@ -10,11 +10,22 @@ import EvaluationTab from "../components/EvaluationTab";
 import MarksTab from "../components/MarksTab";
 import AttendanceTab from "../components/AttendanceTab";
 import ReportsTab from "../components/ReportsTab";
+import AuditDiffViewer from "../components/AuditDiffViewer";
 
 import {
-  ChevronLeft, Users, FlaskConical, FileText,
-  CheckCheck, BarChart3, CalendarCheck, FileSpreadsheet,
-  Settings, History
+  ChevronLeft,
+  Users,
+  FlaskConical,
+  FileText,
+  CheckCheck,
+  BarChart3,
+  CalendarCheck,
+  FileSpreadsheet,
+  Settings,
+  History,
+  Plus,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 
 const tabs = [
@@ -27,6 +38,92 @@ const tabs = [
   { id: "reports", label: "Reports", icon: FileSpreadsheet },
   { id: "history", label: "History", icon: History },
 ];
+
+const ACTION_STYLES = {
+  created: {
+    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+    icon: Plus,
+    label: "Created",
+  },
+  updated: {
+    badge: "bg-amber-500/15 text-amber-300 border-amber-400/30",
+    icon: Edit3,
+    label: "Updated",
+  },
+  deleted: {
+    badge: "bg-red-500/15 text-red-300 border-red-400/30",
+    icon: Trash2,
+    label: "Deleted",
+  },
+};
+
+function HistoryTab({ history }) {
+  if (!history.length) {
+    return (
+      <div className="text-center py-16 text-gray-500">
+        <History size={40} className="mx-auto mb-3 opacity-30" />
+        <p>No changes recorded yet</p>
+        <p className="text-xs mt-1">
+          Edits to labs and practicals will appear here
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {history.map((entry) => {
+        const style = ACTION_STYLES[entry.action] || ACTION_STYLES.updated;
+        const Icon = style.icon;
+        const entityLabel =
+          entry.entityType === "practical" ? "Practical" : "Lab";
+
+        return (
+          <div
+            key={entry._id}
+            className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+          >
+            {/* Header row */}
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider border ${style.badge}`}
+                >
+                  <Icon size={10} />
+                  {style.label}
+                </span>
+                <span className="text-xs text-gray-500">{entityLabel}</span>
+              </div>
+
+              <div className="text-right text-xs text-gray-500">
+                <p className="text-gray-400">
+                  {entry.actorName}{" "}
+                  <span className="text-gray-600">({entry.actorRole})</span>
+                </p>
+                <p className="text-[11px] text-gray-600 mt-0.5">
+                  {new Date(entry.createdAt).toLocaleString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {/* Diff viewer */}
+            <AuditDiffViewer
+              before={entry.before}
+              after={entry.after}
+              action={entry.action}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function TeacherLabDetail() {
   const { labId } = useParams();
@@ -61,9 +158,10 @@ export default function TeacherLabDetail() {
       const response = await apiFetch(`labs/${labId}/history`);
       const data = await response.json();
       if (response.ok) setHistory(data);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
-
 
   if (!lab) {
     return (
@@ -76,31 +174,32 @@ export default function TeacherLabDetail() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "students": return <StudentsTab lab={lab} onUpdate={fetchLab} />;
-      case "practicals": return <PracticalsTab lab={lab} />;
-      case "submissions": return <SubmissionsTab lab={lab} />;
-      case "evaluation": return <EvaluationTab lab={lab} />;
-      case "marks": return <MarksTab lab={lab} />;
-      case "attendance": return <AttendanceTab lab={lab} />;
-      case "reports": return <ReportsTab lab={lab} />;
+      case "students":
+        return <StudentsTab lab={lab} onUpdate={fetchLab} />;
+      case "practicals":
+        return <PracticalsTab lab={lab} />;
+      case "submissions":
+        return <SubmissionsTab lab={lab} />;
+      case "evaluation":
+        return <EvaluationTab lab={lab} />;
+      case "marks":
+        return <MarksTab lab={lab} />;
+      case "attendance":
+        return <AttendanceTab lab={lab} />;
+      case "reports":
+        return <ReportsTab lab={lab} />;
       case "history":
-        return <div className="space-y-3">{history.length ? history.map((entry) => (
-          <div key={entry._id} className="rounded-xl border border-white/10 bg-black/20 p-4">
-            <p className="font-medium text-white capitalize">{entry.entityType} {entry.action}</p>
-            <p className="mt-1 text-sm text-gray-400">{entry.actorName} ({entry.actorRole}) · {new Date(entry.createdAt).toLocaleString()}</p>
-            {entry.before && <details className="mt-2 text-xs text-gray-500"><summary>View change data</summary><pre className="mt-2 overflow-auto">{JSON.stringify({ before: entry.before, after: entry.after }, null, 2)}</pre></details>}
-          </div>
-        )) : <p className="text-gray-500">No changes recorded yet.</p>}</div>;
-      default: return null;
+        return <HistoryTab history={history} />;
+      default:
+        return null;
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-zinc-950">
       {/* <TeacherNavbar /> */}
-      
+
       <div className="p-4 md:p-6 max-w-7xl mx-auto flex flex-col gap-6">
-        
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -115,15 +214,22 @@ export default function TeacherLabDetail() {
               <ChevronLeft size={20} />
             </button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">{lab.name}</h1>
-              <p className="text-sm text-gray-400">{lab.subjectCode} — {lab.session} — {lab.students?.length || 0} Students</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                {lab.name}
+              </h1>
+              <p className="text-sm text-gray-400">
+                {lab.subjectCode} — {lab.session} — {lab.students?.length || 0}{" "}
+                Students
+              </p>
             </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs border ${
-            lab.status === "current"
-              ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-300"
-              : "border-gray-400/20 bg-gray-500/10 text-gray-400"
-          }`}>
+          <div
+            className={`px-3 py-1 rounded-full text-xs border ${
+              lab.status === "current"
+                ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-300"
+                : "border-gray-400/20 bg-gray-500/10 text-gray-400"
+            }`}
+          >
             {lab.status === "current" ? "Active" : "Previous"}
           </div>
         </motion.div>
@@ -160,7 +266,6 @@ export default function TeacherLabDetail() {
         >
           {renderTab()}
         </motion.div>
-
       </div>
     </div>
   );
