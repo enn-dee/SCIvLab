@@ -43,15 +43,15 @@ F 3`,
   starterTemplate: {
     c: {
       prefix: "",
-      starterSolution: `#include<stdio.h>
-#include<limits.h>
-#include<stdbool.h>
+      starterSolution: `#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
 
-void greedy_dijsktra(int graph[6][6], int src){
-    // write your solution here
+void greedy_dijsktra(int graph[6][6], int src) {
+    // TODO: implement Dijkstra's algorithm and print each shortest distance
 }
 
-int main(){
+int main(void) {
     int graph[6][6] = {
         {0, 1, 2, 0, 0, 0},
         {1, 0, 0, 5, 1, 0},
@@ -61,7 +61,7 @@ int main(){
         {0, 0, 0, 2, 1, 0}
     };
 
-    greedy_dijsktra(graph, 0);
+    // TODO: call greedy_dijsktra with graph and source vertex 0
 
     return 0;
 }`,

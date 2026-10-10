@@ -20,6 +20,17 @@ const practicalSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    objective: { type: String, default: "" },
+    examples: [
+      {
+        input: { type: mongoose.Schema.Types.Mixed, default: "" },
+        output: { type: mongoose.Schema.Types.Mixed, default: "" },
+        explanation: { type: String, default: "" },
+      },
+    ],
+    hints: { type: [String], default: [] },
+    requiredConcepts: { type: [String], default: [] },
+    constraints: { type: String, default: "" },
     inputFormat: { type: String, default: "" },
     outputFormat: { type: String, default: "" },
     pseudocode: { type: [String], default: [] },
@@ -76,6 +87,7 @@ const practicalSchema = new mongoose.Schema(
         },
         weight: { type: Number, default: 1, min: 0 },
         checker: { type: String, default: null },
+        tolerance: { type: Number, default: 0.000001, min: 0 },
       },
     ],
     execution: {
