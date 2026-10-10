@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/api/client.js";
-import { ClipboardCheck, Edit3, FileText, Plus, Trash2, X, Users } from "lucide-react";
+import { ClipboardCheck, Edit3, FileText, Plus, Trash2, Upload, X, Users } from "lucide-react";
 import ExamSubmissionsTab from "../components/ExamSubmissionsTab.jsx";
 import toast from "react-hot-toast";
 
@@ -23,6 +23,8 @@ export default function TeacherExams() {
   const [studentRollNumber, setStudentRollNumber] = useState("");
   const [studentBatch, setStudentBatch] = useState("All");
   const [activeTab, setActiveTab] = useState("exams");
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const load = () =>
     apiFetch("exams/teacher")
@@ -106,6 +108,33 @@ export default function TeacherExams() {
   const enrollVisibleStudents = () => {
     setStudentOptions((current) => current.map((student) => visibleStudents.some((item) => item._id === student._id) ? { ...student, enrolled: true } : student));
   };
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !studentsOpen) return;
+    setImporting(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await apiFetch(`exams/${studentsOpen}/import-csv`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Import failed");
+      toast.success(`Imported ${data.enrolled} students (${data.newEnrollments} new)`);
+      if (data.errors?.length) {
+        toast.error(`${data.errors.length} errors occurred`);
+        console.warn(data.errors);
+      }
+      const refreshed = await apiFetch(`exams/${studentsOpen}/students`);
+      setStudentOptions(await refreshed.json());
+    } catch (err) {
+      toast.error(err.message || "Failed to import CSV");
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
 
   return <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-zinc-950 p-4 md:p-8">
     <div className="mx-auto max-w-6xl space-y-6">
@@ -167,6 +196,10 @@ export default function TeacherExams() {
                       {batches.map((batch) => <option key={batch} value={batch}>{batch}</option>)}
                     </select>
                   </label>
+                  <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50">
+                    <Upload size={16} /> {importing ? "Importing..." : "Import CSV"}
+                  </button>
                 </div>
                 <div className="relative">
                   <input value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} placeholder="Search students..." className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 pl-4 text-white placeholder-gray-500" />

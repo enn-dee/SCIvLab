@@ -7,6 +7,12 @@ import { requireRoles } from "../../middleware/roles.js";
 import User from "../../models/User.js";
 import Teacher from "../../models/Teacher.js";
 import { sendExamNotification } from "../../utils/emailService.js";
+import multer from "multer";
+import csv from "csv-parser";
+import { Readable } from "stream";
+import bcrypt from "bcryptjs";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 const MAX_SOURCE_LENGTH = 100_000;
@@ -313,6 +319,136 @@ router.put(
       res.json({
         enrolledStudentIds: req.exam.enrolledStudentIds,
         notificationsQueued: toNotify.length,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.post(
+  "/:id/import-csv",
+  authMiddleware,
+  requireRoles("teacher"),
+  loadExam,
+  teacherExam,
+  upload.single("file"),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "CSV file is required" });
+      }
+
+      const results = [];
+      const errors = [];
+
+      const stream = Readable.from(req.file.buffer.toString());
+      await new Promise((resolve, reject) => {
+        stream
+          .pipe(csv())
+          .on("data", (data) => results.push(data))
+          .on("end", resolve)
+          .on("error", reject);
+      });
+
+      const existingIds = new Set(
+        req.exam.enrolledStudentIds.map((id) => String(id)),
+      );
+      const newStudentIds = [];
+      const enrolledStudents = [];
+
+      for (const [index, row] of results.entries()) {
+        const roll = row.rollNumber?.trim().toUpperCase();
+        const fullName = row.fullName?.trim();
+        const email = row.email?.trim().toLowerCase();
+        const reg = row.registrationNumber?.trim().toUpperCase();
+        const batch = row.batch?.trim();
+        const branch = row.branch?.trim();
+
+        if (!roll || !fullName) {
+          errors.push({
+            row: index + 1,
+            error: "Missing required fields (rollNumber, fullName)",
+          });
+          continue;
+        }
+
+        try {
+          let user = await User.findOne({
+            $or: [{ rollNumber: roll }, { registrationNumber: reg }],
+          });
+
+          if (!user) {
+            user = await User.create({
+              fullName,
+              rollNumber: roll,
+              registrationNumber: reg || undefined,
+              email: email || undefined,
+              password: await bcrypt.hash(roll, 10),
+              role: "student",
+              batch,
+              branch,
+            });
+          }
+
+          if (!existingIds.has(String(user._id))) {
+            newStudentIds.push(user._id);
+            existingIds.add(String(user._id));
+          }
+
+          enrolledStudents.push({ roll, fullName });
+        } catch (err) {
+          errors.push({ row: index + 1, error: err.message });
+        }
+      }
+
+      if (newStudentIds.length > 0) {
+        req.exam.enrolledStudentIds.push(...newStudentIds);
+        await req.exam.save();
+
+        const newStudents = await User.find({
+          _id: { $in: newStudentIds },
+          role: "student",
+        })
+          .select("fullName email")
+          .lean();
+        const withEmail = newStudents.filter((s) => s.email);
+
+        if (withEmail.length > 0) {
+          const teacher = await Teacher.findById(req.user.id)
+            .select("fullName")
+            .lean();
+
+          Promise.allSettled(
+            withEmail.map((student) =>
+              sendExamNotification({
+                student,
+                exam: req.exam,
+                teacherName: teacher?.fullName,
+              }),
+            ),
+          ).then((results) => {
+            const sent = results.filter((r) => r.value?.success).length;
+            const failed = results.filter(
+              (r) => r.status === "rejected" || r.value?.success === false,
+            );
+            console.log(`[mail] Emails sent: ${sent}/${withEmail.length}`);
+            if (failed.length > 0) {
+              console.error(
+                "[error] Failed emails:",
+                failed.map((f) => f.reason?.message || f.value?.error),
+              );
+            }
+          });
+        }
+      }
+
+      res.status(201).json({
+        success: true,
+        enrolled: enrolledStudents.length,
+        newEnrollments: newStudentIds.length,
+        errors,
+        enrolledStudents,
       });
     } catch (error) {
       next(error);
