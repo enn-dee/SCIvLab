@@ -21,14 +21,13 @@ import progressRoutes from "../modules/progress/progress.routes.js";
 import superAdminRoutes from "../modules/superAdmin/superAdmin.routes.js";
 import aiRoutes from "../modules/teacher/ai.routes.js";
 import examRoutes from "../modules/exam/exam.routes.js";
-import { restrictDuringExam } from "../middleware/examLock.js";
 
 const routes = Router();
 
 routes.use("/teacher/ai", aiRoutes);
 
-routes.use("/algorithms", restrictDuringExam, algorithmRoutes);
-routes.use("/algo-progress", restrictDuringExam, algorithmSubmissionRoutes);
+routes.use("/algorithms", algorithmRoutes);
+routes.use("/algo-progress", algorithmSubmissionRoutes);
 routes.use("/auth", authRoutes);
 routes.use("/submissions", practicalSubmissionRoutes);
 routes.use("/progress", progressRoutes);
@@ -37,9 +36,9 @@ routes.use("/admin/students", adminStudentsRoutes);
 routes.use("/admin/labs", adminLabRoutes);
 routes.use("/assignments", assignmentRoutes);
 routes.use("/teacher", teacherRoutes);
-routes.use("/labs", restrictDuringExam, labRoutes);
-routes.use("/lab-students", restrictDuringExam, studentRoutes);
-routes.use("/practicals", restrictDuringExam, practicalRoutes);
+routes.use("/labs", labRoutes);
+routes.use("/lab-students", studentRoutes);
+routes.use("/practicals", practicalRoutes);
 routes.use("/evaluations", evaluationRoutes);
 routes.use("/marks", marksRoutes);
 routes.use("/attendance", attendanceRoutes);
