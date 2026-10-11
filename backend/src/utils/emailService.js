@@ -153,6 +153,11 @@ export const sendExamNotification = async ({ student, exam, teacherName }) => {
         fullscreen mode will be recorded as a penalty.
       </div>
 
+      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 12px; margin: 20px 0; font-size: 13px; color: #fca5a5;">
+        🔒 All other tabs (Labs, Algorithms, Practicals) will close ${startStr}.
+        Submit any pending practicals ASAP before the exam begins.
+      </div>
+
       <div style="text-align: center; margin: 28px 0;">
         <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/student/exams"
            style="display: inline-block; background: linear-gradient(135deg, #22d3ee, #a855f7); color: #000; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">

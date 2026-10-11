@@ -22,13 +22,14 @@ import superAdminRoutes from "../modules/superAdmin/superAdmin.routes.js";
 import aiRoutes from "../modules/teacher/ai.routes.js";
 import examRoutes from "../modules/exam/exam.routes.js";
 import { restrictDuringExam } from "../middleware/examLock.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 const routes = Router();
 
 routes.use("/teacher/ai", aiRoutes);
 
-routes.use("/algorithms", restrictDuringExam, algorithmRoutes);
-routes.use("/algo-progress", restrictDuringExam, algorithmSubmissionRoutes);
+routes.use("/algorithms", authMiddleware, restrictDuringExam, algorithmRoutes);
+routes.use("/algo-progress", authMiddleware, restrictDuringExam, algorithmSubmissionRoutes);
 routes.use("/auth", authRoutes);
 routes.use("/submissions", practicalSubmissionRoutes);
 routes.use("/progress", progressRoutes);
@@ -37,9 +38,9 @@ routes.use("/admin/students", adminStudentsRoutes);
 routes.use("/admin/labs", adminLabRoutes);
 routes.use("/assignments", assignmentRoutes);
 routes.use("/teacher", teacherRoutes);
-routes.use("/labs", restrictDuringExam, labRoutes);
-routes.use("/lab-students", restrictDuringExam, studentRoutes);
-routes.use("/practicals", restrictDuringExam, practicalRoutes);
+routes.use("/labs", authMiddleware, restrictDuringExam, labRoutes);
+routes.use("/lab-students", authMiddleware, restrictDuringExam, studentRoutes);
+routes.use("/practicals", authMiddleware, restrictDuringExam, practicalRoutes);
 routes.use("/evaluations", evaluationRoutes);
 routes.use("/marks", marksRoutes);
 routes.use("/attendance", attendanceRoutes);
