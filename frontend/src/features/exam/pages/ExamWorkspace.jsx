@@ -231,7 +231,7 @@ export default function ExamWorkspace() {
         <div className="h-[52vh] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] disabled:opacity-70">
           <Editor
             height="100%"
-            theme={theme === "light" ? "vs" : "vs-dark"}
+            theme={theme === "light" ? "scivlab-light" : "vs-dark"}
             language={language === "cpp" ? "cpp" : language}
             value={code}
             onChange={(value) => setCode(value || "")}

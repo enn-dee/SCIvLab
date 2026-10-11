@@ -763,14 +763,14 @@ export default function StudentLabDetail() {
 
                                 {p.requiredConcepts?.length > 0 && (
                                   <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2 ">
                                       Concepts to practice
                                     </p>
                                     <div className="flex flex-wrap gap-2">
                                       {p.requiredConcepts.map((concept) => (
                                         <span
                                           key={concept}
-                                          className="rounded-full border border-cyan-400/20 bg-cyan-500/[0.08] px-2.5 py-1 text-xs text-cyan-100"
+                                          className="rounded-full border border-cyan-400/20 bg-cyan-500/[0.08] px-2.5 py-1 text-xs text-gray-400  dark:text-cyan-100"
                                         >
                                           {concept}
                                         </span>
@@ -811,13 +811,15 @@ export default function StudentLabDetail() {
                                       {p.examples.map((example, index) => (
                                         <div
                                           key={`${p._id}-example-${index}`}
-                                          className="grid grid-cols-1 gap-2 rounded-xl border border-white/10 bg-black/25 p-3 sm:grid-cols-2"
+                                          className="grid grid-cols-1 gap-2 rounded-xl border  border-white/10 bg-black/25 p-3 sm:grid-cols-2"
                                         >
                                           <pre className="whitespace-pre-wrap text-xs text-gray-300">
-                                            Input: {String(example.input ?? "(none)")}
+                                            Input:{" "}
+                                            {String(example.input ?? "(none)")}
                                           </pre>
                                           <pre className="whitespace-pre-wrap text-xs text-gray-300">
-                                            Output: {String(example.output ?? "")}
+                                            Output:{" "}
+                                            {String(example.output ?? "")}
                                           </pre>
                                           {example.explanation && (
                                             <p className="text-xs leading-5 text-gray-400 sm:col-span-2">
@@ -1367,7 +1369,7 @@ export default function StudentLabDetail() {
                 <div className="shrink-0 border-b border-white/10">
                   <Editor
                     height={`${Math.max(40, editorPrefix.split("\n").length * 18 + 20)}px`}
-                    theme={theme === "light" ? "vs" : "vs-dark"}
+                    theme={theme === "light" ? "scivlab-light" : "vs-dark"}
                     language={language === "cpp" ? "cpp" : language}
                     value={editorPrefix}
                     options={{
@@ -1395,7 +1397,7 @@ export default function StudentLabDetail() {
               <div className="flex-1 min-h-0">
                 <Editor
                   height="100%"
-                  theme={theme === "light" ? "vs" : "vs-dark"}
+                  theme={theme === "light" ? "scivlab-light" : "vs-dark"}
                   language={language === "cpp" ? "cpp" : language}
                   value={code}
                   onChange={(value) => {
@@ -1442,7 +1444,7 @@ export default function StudentLabDetail() {
                 <div className="shrink-0 border-t border-white/10">
                   <Editor
                     height={`${Math.max(40, editorSuffix.split("\n").length * 18 + 20)}px`}
-                    theme="vs-dark"
+                    theme={theme === "light" ? "scivlab-light" : "vs-dark"}
                     language={language === "cpp" ? "cpp" : language}
                     value={editorSuffix}
                     options={{
