@@ -523,7 +523,7 @@ function CodeTab({ algo }) {
                           50,
                           getTemplate().prefix.split("\n").length + 1,
                         )}px`}
-                        theme={theme === "light" ? "vs" : "vs-dark"}
+                        theme={theme === "light" ? "scivlab-light" : "vs-dark"}
                         language="python"
                         value={getTemplate().prefix.replace(/\n+$/, "")}
                         options={{
@@ -556,7 +556,7 @@ function CodeTab({ algo }) {
                     <Editor
                       key={algo.slug}
                       height="100%"
-                      theme={theme === "light" ? "vs" : "vs-dark"}
+                      theme={theme === "light" ? "scivlab-light" : "vs-dark"}
                       language="python"
                       value={code}
                       onChange={handleCodeChange}
