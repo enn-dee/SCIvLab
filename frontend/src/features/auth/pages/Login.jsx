@@ -3,6 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Lock, Sparkles, GraduationCap, Hash } from "lucide-react";
+import ThemeToggle from "../../../components/ui/ThemeToggle";
 
 export default function Login() {
   const [rollNumber, setRollNumber] = useState("");
@@ -45,7 +46,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 text-white">
+    <div className="relative min-h-screen flex items-center justify-center px-4 text-white">
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle compact />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}

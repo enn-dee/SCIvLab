@@ -394,7 +394,7 @@ export default function StudentLabDetail() {
     setSubmitting(true);
 
     try {
-      if (lab?.kind === "academic") {
+      if (editorPractical.execution?.enabled) {
         let results;
         if (isOffline()) {
           results = runOfflineTests(
@@ -1276,17 +1276,16 @@ export default function StudentLabDetail() {
                     Reset
                   </button>
                 )}
-                {lab?.kind === "academic" &&
-                  editorPractical?.weekSchedule?.status !== "locked" && (
-                    <button
-                      onClick={handleRunCode}
-                      disabled={running}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
-                    >
-                      <Play size={12} />
-                      {running ? "Running..." : "Run"}
-                    </button>
-                  )}
+                {editorPractical?.weekSchedule?.status !== "locked" && (
+                  <button
+                    onClick={handleRunCode}
+                    disabled={running}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs hover:bg-cyan-500/20 transition disabled:opacity-50"
+                  >
+                    <Play size={12} />
+                    {running ? "Running..." : "Run"}
+                  </button>
+                )}
                 {showSubmitConfirmation && (
                   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <motion.div

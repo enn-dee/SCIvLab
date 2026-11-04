@@ -325,15 +325,26 @@ function VisualTab({ algo }) {
   // Styled edges
   const styledEdges = useMemo(
     () =>
-      rawEdges.map((edge) => ({
-        ...edge,
-        type: "smoothstep",
-        animated: true,
-        labelStyle: { fontWeight: "bold", fill: "#000" },
-        style: { strokeWidth: 2 },
-        markerEnd: { type: "arrowclosed", color: "#fff" },
-      })),
-    [rawEdges]
+      rawEdges.map((edge) => {
+        const palindromeBranch =
+          algo.slug === "palindrome-check" &&
+          ({
+            e5: { sourceHandle: "right", target: "palindrome" },
+            e6: { sourceHandle: "bottom", target: "move_pointers" },
+            e7: { sourceHandle: "left", target: "not_palindrome" },
+          }[edge.id] || {});
+
+        return {
+          ...edge,
+          ...palindromeBranch,
+          type: "smoothstep",
+          animated: true,
+          labelStyle: { fontWeight: "bold", fill: "#000" },
+          style: { strokeWidth: 2 },
+          markerEnd: { type: "arrowclosed", color: "#fff" },
+        };
+      }),
+    [algo.slug, rawEdges]
   );
 
   // Layout
