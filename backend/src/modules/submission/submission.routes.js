@@ -283,7 +283,11 @@ router.post(
         if (existing)
           return res.json({ submission: existing, duplicate: true });
       }
-      if (req.lab.kind !== "academic") {
+      if (!req.practical.execution.enabled) {
+        if (req.lab.kind === "academic")
+          return res
+            .status(400)
+            .json({ error: "Execution is disabled for this practical" });
         const submission = await Submission.create({
           studentId: req.user.id,
           practicalId: req.practical._id,
@@ -295,12 +299,20 @@ router.post(
         });
         return res.status(201).json({ submission });
       }
-      if (!req.practical.execution.enabled)
-        return res
-          .status(400)
-          .json({ error: "Execution is disabled for this practical" });
       if (!req.practical.execution.allowedLanguages.includes(language))
         return res.status(400).json({ error: "Language is not allowed" });
+      if (req.lab.kind !== "academic" && !req.practical.testCases?.length) {
+        const submission = await Submission.create({
+          studentId: req.user.id,
+          practicalId: req.practical._id,
+          code: solutionCode,
+          language,
+          status: "submitted",
+          submittedAt: new Date(),
+          idempotencyKey,
+        });
+        return res.status(201).json({ submission });
+      }
       const { testCases, results } = await evaluate(
         req.practical,
         solutionCode,

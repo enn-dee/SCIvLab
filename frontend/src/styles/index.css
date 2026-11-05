@@ -467,6 +467,16 @@ h6 {
   color: #0f172a !important;
 }
 
+/* ── Flowchart edges ── */
+:root[data-theme="light"] .react-flow__edge-path {
+  stroke: #475569 !important;
+}
+
+:root[data-theme="light"] .react-flow__edge marker path {
+  fill: #475569 !important;
+  stroke: #475569 !important;
+}
+
 /* Smooth transition when switching */
 html {
   transition: background-color 0.3s ease, color 0.3s ease;

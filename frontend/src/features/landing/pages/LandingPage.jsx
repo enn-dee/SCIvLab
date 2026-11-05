@@ -22,6 +22,7 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import ThemeToggle from "../../../components/ui/ThemeToggle";
 
 function FloatingIcon({ icon, className, delay = 0 }) {
   return (
@@ -176,6 +177,10 @@ function LandingPage() {
 
   return (
     <div className="overflow-hidden relative">
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle compact />
+      </div>
+
       {/* BACKGROUND PARTICLES */}
 
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
